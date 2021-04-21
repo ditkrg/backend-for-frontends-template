@@ -1,0 +1,25 @@
+{
+  "name": "Backend-For-Frotends-Template",
+  "version": "1.0.0",
+  "description": "A template application to be used by the Digital Development Team at the Department of Information Technology of Kurdistan Regional Government for implementing a basic Backend-for-Frontends Patterns",
+  "main": "index.js",
+  "repository": "https://githuh.com/ditkrg/backend-for-frontends-template",
+  "author": "Brusk Hamarash",
+  "license": "MIT",
+  "private": true,
+  "dependencies": {
+    "fastify": "^3.15.0",
+    "fastify-http-proxy": "^5.0.0",
+    "hyperid": "^2.1.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "NODE_ENV=production node .",
+    "start:dev": "NODE_ENV=development node -r dotenv/config ."
+  },
+  "devDependencies": {
+    "@types/node": "^14.14.41",
+    "dotenv": "^8.2.0",
+    "typescript": "^4.2.4"
+  }
+}
