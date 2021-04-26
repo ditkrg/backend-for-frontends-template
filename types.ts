@@ -1,15 +1,18 @@
-interface RewriteHeadersOptions {
-    
-}
-
-interface Proxy {
+interface ProxyConfig {
     upstream : string 
     prefix?  : string
     enableHTTP2? : boolean,
-    rewriteHeadersOptions: RewriteHeadersOptions
+    httpTimeout: number
 }
 
+interface CookieConfig { 
+    secret: string 
+    parseOptions: {}
+    domain: string
+    path: string
+}
 
 export interface Configurable {
-    proxies : Proxy[]    
+    proxy : ProxyConfig
+    cookie: CookieConfig
 }

@@ -1,7 +1,15 @@
 {
-    "proxies": [
-        {
-            
-        }
-    ]
+    "proxy": {
+        "upstream": "http://localhost:3001",
+        "prefix": "",
+        "enableHTTP2": false,
+        "httpTimeout": 10000
+    },
+    "cookie": {
+        "secret": "1234",
+        "parseOptions": {},
+        "domain": "localhost",
+        "path": "/"
+    }
+    
 }
