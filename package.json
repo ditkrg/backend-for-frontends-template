@@ -18,9 +18,10 @@
     "passport": "^0.4.1"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "start": "NODE_ENV=production node .",
-    "start:dev": "NODE_ENV=development node -r dotenv/config ."
+    "build": "tsc",
+    "start:prod": "node dist/index.js",
+    "start:dev": "NODE_ENV=development node -r dotenv/config dist/index.js",
+    "start:compiler": "tsc -w"
   },
   "devDependencies": {
     "@types/node": "^14.14.41",

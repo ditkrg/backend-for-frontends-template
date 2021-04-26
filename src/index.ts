@@ -29,16 +29,16 @@ let issuer : any = null;
 let client : any = null;
 let code_verifier : any = null;
 
-Issuer.discover('https://dev.auth.digital.gov.krd/.well-known/openid-configuration')
+const callbackWithHost = `${config.host}/${config.auth.redirect_endpoint}`
+
+Issuer.discover(config.auth.openidc_discovery_uri)
 .then((openIDResponse : any) => client = new openIDResponse.Client({
-        client_id: 'bff-test',
-        client_secret: '3a0f622eedf34f00997eae89dd63c13f',
-        redirect_uris: ['http://localhost:3002/callback'],
+        client_id: config.auth.client_id,
+        client_secret: config.auth.client_secret,
+        redirect_uris: [callbackWithHost],
         response_types: ['code'],
     }))
-.catch((e : any) => console.log("Shit Happened", {e}))
-
-
+.catch((e : any) => console.error("Error occurred while trying to discover the Open ID Connect Configurations", {e}))
 
 
 server.register(fastifyCookie, {
@@ -59,16 +59,15 @@ server.get("/login", async (request : FastifyRequest, reply: FastifyReply) => {
         code_challenge_method: 'S256',
     });
     
-    console.log({
-        authorizationURL
-    })
+    console.log(`Authorization code request was sent to the Authorization Server. URL: ${authorizationURL}`)
+
     reply.redirect(authorizationURL)
 })
 
 server.get("/callback", (request : FastifyRequest, reply: any) => {
     const params = client.callbackParams(request);
     console.log({params})
-    client.callback('http://localhost:3002/callback', params, { code_verifier }) // => Promise
+    client.callback(callbackWithHost, params, { code_verifier }) // => Promise
     .then(function (tokenSet : any) {
         const { refresh_token } = tokenSet;
         console.log({
@@ -100,5 +99,5 @@ server.register(proxy, {
     }
 })
 
-console.log("REQUEST LOGGED")
-server.listen(3002)
+console.log(`Listening on PORT: ${process.env.PORTs}`)
+server.listen(process.env.PORT)
