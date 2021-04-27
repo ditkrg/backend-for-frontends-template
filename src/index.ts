@@ -6,13 +6,20 @@ if (process.env.NODE_ENV !== 'production') {
     require('dotenv').config();
 }
 
-const fastify = require('fastify');
-const fastifyCookie = require('fastify-cookie');
-const proxy   = require('fastify-http-proxy')
+const fastify           = require('fastify');
+const fastifyCookie     = require('fastify-cookie');
+const fastifyHealtCheck = require('fastify-healthcheck');
+const fastifyStatus     = require('fastify-status');
+const proxy             = require('fastify-http-proxy');
 
-const hyperid = require('hyperid')
-const uuid = hyperid()
-const { configure } = require('./configurations')
+const pkgDir = require('pkg-dir');
+const path    = require('path');
+const os      = require('os');
+const hyperid = require('hyperid');
+const uuid    = hyperid();
+const started = new Date().toISOString(); 
+
+const { configure }                  = require('./configurations');
 const { generators, custom, Issuer } = require('openid-client');
 
 const config : Configurable = configure();
@@ -41,10 +48,35 @@ Issuer.discover(config.auth.openidc_discovery_uri)
 .catch((e : any) => console.error("Error occurred while trying to discover the Open ID Connect Configurations", {e}))
 
 
+// Register Fastify-Healthcheck plugin
+server.register(fastifyHealtCheck);
+
+server.get("/status", (request : FastifyRequest, reply : FastifyReply) => {
+
+    const rootDir = pkgDir.sync();
+    const { uptime } = process
+    const { name = '', version = '' } = require(path.join(rootDir, 'package.json'));
+
+    const host    = os.hostname();
+    
+    console.log({
+        uptime
+    })
+    reply.status(200).send({
+        app: name,
+        version, 
+        startTime: started,
+        uptime: uptime(),
+        host
+    })
+})
+
 server.register(fastifyCookie, {
     secret: config.cookie.secret,
     parseOptions: config.cookie.parseOptions || {}
 })
+
+
 
 server.get("/login", async (request : FastifyRequest, reply: FastifyReply) => {
     code_verifier = generators.codeVerifier();
