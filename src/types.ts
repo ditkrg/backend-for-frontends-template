@@ -31,4 +31,5 @@ export interface Configurable {
     auth : AuthConfig
     app  : AppConfig,
     host? : string
+    redisConnection? : string
 }

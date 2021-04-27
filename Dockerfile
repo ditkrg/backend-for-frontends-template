@@ -1,4 +1,4 @@
-FROM node:12-alpine as setupEnv
+FROM reg.dev.krd/library/node:12-alpine as setupEnv
 
 RUN set -eux \
     & apk add \
