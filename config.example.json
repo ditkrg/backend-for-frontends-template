@@ -1,0 +1,25 @@
+{
+    "proxy": {
+        "upstream": "<UPSTREAM URL>",
+        "prefix": "<URL PREFIX TO REVERSE>",
+        "enableHTTP2": false,
+        "httpTimeout": 10000
+    },
+    "cookie": {
+        "secret": "<COOKIE SECRET>",
+        "parseOptions": {},
+        "domain": "localhost",
+        "path": "/"
+    },
+    "auth": {
+        "client_id": "<OAUTH2 CLIENT ID>",
+        "client_secret": "<OAUTH2 CLIENT SECRET>",
+        "redirect_endpoint": "<CALLBACK ENDPOINT USED BY IDP>",
+        "openidc_discovery_uri": "<OPEN ID PROVIDER .well-known CONFIGS>"
+    },
+    "app": {
+        "useSSL": false,
+        "domain": "localhost"
+    }
+    
+}
