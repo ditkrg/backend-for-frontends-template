@@ -23,7 +23,6 @@ ENV NODE_ENV=production
 
 COPY  --from=buildEnv /app/*.json ./
 RUN yarn install
-
 COPY --from=buildEnv /app/dist ./dist
 
 

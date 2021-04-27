@@ -36,6 +36,7 @@ custom.setHttpOptionsDefaults({
 
 redisClient.on("error", function(error : any) {
     console.error(error);
+    process.exit();
 });
 
 redisClient.on("ready", function(){
@@ -231,5 +232,3 @@ Issuer.discover(config.auth.openidc_discovery_uri)
     server.listen(process.env.PORT)
 })
 .catch((e : any) => console.error("Error occurred while trying to discover the Open ID Connect Configurations", {e}))
-
-
