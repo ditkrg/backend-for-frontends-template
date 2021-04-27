@@ -229,6 +229,6 @@ Issuer.discover(config.auth.openidc_discovery_uri)
     })
 
     console.log(`Listening on PORT: ${process.env.PORT}`)
-    server.listen(process.env.PORT)
+    server.listen(process.env.PORT, '0.0.0.0')
 })
 .catch((e : any) => console.error("Error occurred while trying to discover the Open ID Connect Configurations", {e}))
