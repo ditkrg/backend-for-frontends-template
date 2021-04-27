@@ -1,6 +1,6 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { IncomingHttpHeaders } from "node:http";
-import { RedisClient, RedisError } from "redis";
+import { IncomingHttpHeaders, IncomingMessage } from "node:http";
+import { RedisClient } from "redis";
 import { Configurable } from "./types";
 
 if (process.env.NODE_ENV !== 'production') {
@@ -10,25 +10,23 @@ if (process.env.NODE_ENV !== 'production') {
 const fastify           = require('fastify');
 const fastifyCookie     = require('fastify-cookie');
 const fastifyHealtCheck = require('fastify-healthcheck');
-const fastifyStatus     = require('fastify-status');
 const proxy             = require('fastify-http-proxy');
 
-const pkgDir = require('pkg-dir');
+const pkgDir   = require('pkg-dir');
 const path     = require('path');
 const os       = require('os');
 const hyperid  = require('hyperid');
 const uuid     = hyperid();
-const CryptoJS = require("crypto-js");
 const redis    = require("redis");
 
-const started = new Date().toISOString(); 
+const started  = new Date().toISOString(); 
 
 const { configure }                  = require('./configurations');
-const { generators, custom, Issuer, TokenSet } = require('openid-client');
-
+import { generators, custom, Issuer, TokenSet, Client } from "openid-client";
+const { encrypt, decrypt } = require("./encryption")
 
 const config : Configurable = configure();
-const redisClient = redis.createClient(config.redisConnection);
+const redisClient : RedisClient = redis.createClient(config.redisConnection);
 
 
 custom.setHttpOptionsDefaults({
@@ -53,7 +51,7 @@ Issuer.discover(config.auth.openidc_discovery_uri)
         logger: true
     });
 
-    const client = new openIDResponse.Client({
+    const client : Client = new openIDResponse.Client({
         client_id: config.auth.client_id,
         client_secret: config.auth.client_secret,
         redirect_uris: [callbackWithHost],
@@ -92,7 +90,7 @@ Issuer.discover(config.auth.openidc_discovery_uri)
 
             // store the code_verifier in your framework's session mechanism, if it is a cookie based solution
             // it should be httpOnly (not readable by javascript) and encrypted.
-            redisClient.set("code_verifier", code_verifier, async (err : RedisError, res : any) => { 
+            redisClient.set("code_verifier", code_verifier, async (err : unknown, res : any) => { 
                 console.log({code_verifier, res})
                 if (!err){
                     const code_challenge = generators.codeChallenge(code_verifier);
@@ -115,28 +113,33 @@ Issuer.discover(config.auth.openidc_discovery_uri)
             })
         })
     
-        instance.get("/callback", async (request : FastifyRequest, reply: any) => {
+        instance.get("/callback", async (request : IncomingMessage, reply: any) => {
             const params = client.callbackParams(request);
             
-            redisClient.get("code_verifier", (err : RedisError, res : any) => {
+            redisClient.get("code_verifier", (err : unknown, res : any) => {
                 if(!err){
                     console.log({res})
                     client.callback(callbackWithHost, params, { code_verifier: res }) // => Promise
-                    .then(function (tokenSet : any) {``
-                        console.log({tokenSet})
-                        const encryptpedObject = CryptoJS.AES.encrypt(JSON.stringify(tokenSet), "1234")
-            
-                        console.log({encryptpedObject: encryptpedObject.toString()})
-                        reply.setCookie('token', encryptpedObject.toString(), 
-                        {
-                            domain: config.cookie.domain,
-                            path: config.cookie.path,
-                            sameSite: true,
-                            httpOnly: true,
-                            signed: true
+                    .then(function (tokenSet : any) {
+                        const { refresh_token } = tokenSet;
+                        const encrypted = encrypt(refresh_token, "1234")
+                        
+
+                        redisClient.set(refresh_token, JSON.stringify(tokenSet), (err : unknown, res: any) => {
+                            if(!err){
+                                reply.setCookie('token', encrypted, 
+                                {
+                                    domain: config.cookie.domain,
+                                    path: config.cookie.path,
+                                    sameSite: true,
+                                    httpOnly: true
+                                }).redirect("/")                            
+                            }else {
+                                reply.status(500).send({
+                                    error: "Failed to store refresh token in database"
+                                })
+                            }
                         })
-                    
-                        reply.redirect("/");
                     }).catch((e : any) => console.error("Error occurred in callback", {e}))
                 }
             })
@@ -146,30 +149,78 @@ Issuer.discover(config.auth.openidc_discovery_uri)
     })
 
     server.register((instance : any, opts : any, next : () => {}) => {
-        instance.addHook('onRequest', (request : any, reply : FastifyReply, done : () => {}) => {
-            const { cookies: { token } } = request;
-                
-            if(token != undefined && token != '' && token != null) {
-                const parsedTokenSet = new TokenSet(JSON.parse(CryptoJS.AES.decrypt(token, "1234")))
-                console.log({parsedTokenSet})
-                done()
-            }else {
-                reply.status(401).send({
-                    error: "Unauthorized request"
-                })
-            }
+        // instance.addHook('preSerialization', (request : any, reply : FastifyReply, done : any) => {
             
     
-        })
+        // })
         instance.register(proxy, {
             upstream: config.proxy.upstream,
             prefix: config.proxy.prefix || "",
-            http2: config.proxy.enableHTTP2 || false ,
-            replyOptions: {
-                rewriteRequestHeaders: (originalReq : IncomingHttpHeaders, headers : any) => ({
-                    ...headers, 
-                    'request-id': uuid()
+            http2: config.proxy.enableHTTP2 || false,
+            preHandler: (request : any, reply : FastifyReply, done : any) => {
+                const { cookies: { token } } = request;
+                
+                if(token != undefined && token != '' && token != null) {
+
+                    const decrypted = decrypt(token, "1234")
+                    redisClient.get(decrypted, async (err: unknown, res : any) => {
+
+                        if(err){
+                            // Desirably, report this to Sentry
+                            reply.status(500).send({
+                                error: "Failed to associate cookie with any records. This could be a possible cookie hijacking attack!"
+                            })
+                            return;
+                        }
+                        const tokenSet  = new TokenSet(JSON.parse(res))
+                        let accessToken = tokenSet.access_token;
+
+                        if(tokenSet.expired()){
+                            try {
+                                const newTokenSet = await client.refresh(tokenSet)
+                                accessToken = await newTokenSet.access_token
+                                redisClient.del(decrypted, (deleteErr : unknown, innerRes) => {
+                                    if(deleteErr){
+                                        reply.status(500).send({
+                                            error: "Failed to delete old records and update it with a new token"
+                                        })
+                                        return
+                                    }
+
+                                    redisClient.set(newTokenSet.refresh_token as string, JSON.stringify(newTokenSet), (setError : unknown, mostInnerResponse) => {
+                                        
+                                        if(setError){
+                                            // Desirably, report this to Sentry
+                                            reply.status(500).send({
+                                                error: "Deleted the old token but failed to register the most recent one."
+                                            })
+                                            return;
+                                        }
+                                    })
+                                })
+                            }catch(err : unknown){
+                                reply.redirect("/login")
+                                return;
+                            }
+                        }
+                        
+                        return { ...request, headers: {...request.headers, 'Authorization': `Bearer ${accessToken}`}}
                 })
+                }else {
+                    reply.status(401).send({
+                        error: "Unauthorized request"
+                    })
+                }
+                
+                done()
+            },
+            replyOptions: {
+                rewriteRequestHeaders: (originalReq : IncomingHttpHeaders, headers : any) => {
+                    console.log({
+                        originalReq,
+                        headers
+                    })
+                }
             }
         })
 

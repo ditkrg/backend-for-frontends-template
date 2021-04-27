@@ -17,18 +17,21 @@
     "fastify-healthcheck": "^3.1.0",
     "fastify-http-proxy": "^5.0.0",
     "fastify-status": "^2.2.1",
+    "global": "^4.4.0",
     "hyperid": "^2.1.0",
+    "nodemon": "^2.0.7",
     "openid-client": "^4.7.2",
     "os": "^0.1.1",
     "passport": "^0.4.1",
     "path": "^0.12.7",
     "pkg-dir": "^5.0.0",
-    "redis": "^3.1.2"
+    "redis": "^3.1.2",
+    "ts-node": "^9.1.1"
   },
   "scripts": {
     "build": "tsc",
     "start:prod": "node dist/index.js",
-    "start:dev": "NODE_ENV=development node -r dotenv/config dist/index.js",
+    "start:dev": "NODE_ENV=development nodemon -r dotenv/config dist/index.js",
     "start:compiler": "tsc -w"
   },
   "devDependencies": {
