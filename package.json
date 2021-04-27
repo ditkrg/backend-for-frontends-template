@@ -1,7 +1,7 @@
 {
-  "name": "Backend-For-Frotends-Template",
+  "name": "Backend-For-Frontends-Template",
   "version": "1.0.0",
-  "description": "A template application to be used by the Digital Development Team at the Department of Information Technology of Kurdistan Regional Government for implementing a basic Backend-for-Frontends Patterns",
+  "description": "A template application to be used by the Digital Development Team at the Department of Information Technology of Kurdistan Regional Government for implementing a basic Backend-for-Frontends Pattern that handles all oAuth2 and Open-ID Operations on behalf of the client and reverse proxies the request to protected resources.",
   "main": "index.js",
   "repository": "https://githuh.com/ditkrg/backend-for-frontends-template",
   "author": "Brusk Hamarash",
@@ -12,10 +12,15 @@
     "cookie-parser": "^1.4.5",
     "fastify": "^3.15.0",
     "fastify-cookie": "^5.3.0",
+    "fastify-healthcheck": "^3.1.0",
     "fastify-http-proxy": "^5.0.0",
+    "fastify-status": "^2.2.1",
     "hyperid": "^2.1.0",
     "openid-client": "^4.7.2",
-    "passport": "^0.4.1"
+    "os": "^0.1.1",
+    "passport": "^0.4.1",
+    "path": "^0.12.7",
+    "pkg-dir": "^5.0.0"
   },
   "scripts": {
     "build": "tsc",
