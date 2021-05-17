@@ -3,6 +3,11 @@ import { IncomingHttpHeaders, IncomingMessage } from "node:http";
 import { RedisClient } from "redis";
 import { Configurable } from "./types";
 
+import * as Sentry from "@sentry/node";
+
+const pkg = require('../package.json')
+
+
 if (process.env.NODE_ENV !== 'production') {
     require('dotenv').config();
 }
@@ -28,6 +33,17 @@ const { encrypt, decrypt } = require("./encryption")
 
 const config : Configurable = configure();
 const redisClient : RedisClient = redis.createClient(config.redisConnection);
+
+Sentry.init({
+    dsn: config.sentryConfig.dsn,
+    environment: process.env.NODE_ENV,
+    release: `${pkg.name}@${pkg.version}`,
+
+  // Set tracesSampleRate to 1.0 to capture 100%
+  // of transactions for performance monitoring.
+  // We recommend adjusting this value in production
+  tracesSampleRate: 0.3,
+});
 
 
 custom.setHttpOptionsDefaults({
@@ -63,6 +79,14 @@ Issuer.discover(config.auth.openidc_discovery_uri)
     // Register Fastify-Healthcheck plugin
     server.register(fastifyHealtCheck);
 
+    server.addHook('onError', (request : any, reply : any, error : unknown, done : any) => {
+        // Only send Sentry errors when not in development
+        if (process.env.NODE_ENV == 'development') {
+            Sentry.captureException(error)
+        }
+        done()
+    })
+    
     server.get("/status", (request : FastifyRequest, reply : FastifyReply) => {
 
         const rootDir = pkgDir.sync();

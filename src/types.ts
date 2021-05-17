@@ -32,6 +32,10 @@ interface StoreConfig {
     tokenCookieName : string
 }
 
+interface SentryConfig { 
+    dsn : string
+    environment : "development" | "production"
+}
 interface TokenErrorResponse {
     errorType : "HTTPError" | "Error",
     message : string 
@@ -50,8 +54,9 @@ export interface Configurable {
     proxy : ProxyConfig
     cookie: CookieConfig
     auth : AuthConfig
-    app  : AppConfig,
-    storeConfig: StoreConfig
+    app  : AppConfig
+    storeConfig : StoreConfig
+    sentryConfig : SentryConfig 
     host? : string
     redisConnection? : string
 }
