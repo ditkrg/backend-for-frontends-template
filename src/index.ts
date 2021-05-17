@@ -23,6 +23,7 @@ const started  = new Date().toISOString();
 
 const { configure }                  = require('./configurations');
 import { generators, custom, Issuer, TokenSet, Client } from "openid-client";
+import TokensManager from "./tokens-manager";
 const { encrypt, decrypt } = require("./encryption")
 
 const config : Configurable = configure();
@@ -59,7 +60,7 @@ Issuer.discover(config.auth.openidc_discovery_uri)
         response_types: ['code'],
     })
 
-        // Register Fastify-Healthcheck plugin
+    // Register Fastify-Healthcheck plugin
     server.register(fastifyHealtCheck);
 
     server.get("/status", (request : FastifyRequest, reply : FastifyReply) => {
@@ -92,7 +93,7 @@ Issuer.discover(config.auth.openidc_discovery_uri)
             
             // store the code_verifier in your framework's session mechanism, if it is a cookie based solution
             // it should be httpOnly (not readable by javascript) and encrypted.
-            redisClient.set("code_verifier", code_verifier, async (err : unknown, res : any) => { 
+            redisClient.set(config.storeConfig.codeVerifierKeyName, code_verifier, async (err : unknown, res : any) => { 
                 console.log({code_verifier, res})
                 if (!err){
                     const code_challenge = generators.codeChallenge(code_verifier);
@@ -126,13 +127,13 @@ Issuer.discover(config.auth.openidc_discovery_uri)
             // console.log("After")
 
             
-            redisClient.get("code_verifier", (err : unknown, res : any) => {
+            redisClient.get(config.storeConfig.codeVerifierKeyName, (err : unknown, res : any) => {
                 if(!err){
                     console.log({res})
                     client.callback(callbackWithHost, params, { code_verifier: res }) // => Promise
                     .then(function (tokenSet : any) {
                         const { refresh_token } = tokenSet;
-                        const encrypted = encrypt(refresh_token, "1234")
+                        const encrypted = encrypt(refresh_token, config.cookie.encryptionSecret)
                         
 
                         redisClient.set(refresh_token, JSON.stringify(tokenSet), (err : unknown, res: any) => {
@@ -160,68 +161,45 @@ Issuer.discover(config.auth.openidc_discovery_uri)
 
     server.register((instance : any, opts : any, next : () => {}) => {
         instance
-        .decorate('brusk', '')
-        .addHook('preHandler', (request : any, reply : FastifyReply, done : any) => {
+        .addHook('onRequest', (request : any, reply : any, done : any) => {
             
             console.log("prevalidation")
             const { cookies: { token } } = request;
                 
-            if(token != undefined && token != '' && token != null) {
+            const tokenManager = new TokensManager(client, redisClient, config, token)
 
-                const decrypted = decrypt(token, "1234")
-                redisClient.get(decrypted, async (err: unknown, res : any) => {
+            tokenManager.checkToken()
+            .then(res => {
+                request.headers.Authorization = `Bearer ${res.tokenSet?.access_token}`
 
-                    if(err){
-                        // Desirably, report this to Sentry
-                        reply.status(500).send({
-                            error: "Failed to associate cookie with any records. This could be a possible cookie hijacking attack!"
-                        })
-                        return;
-                    }
-                    const tokenSet  = new TokenSet(JSON.parse(res))
-                    let accessToken = tokenSet.access_token;
+                if(res.hasRefreshed){
+                    const encrypted = encrypt(res.tokenSet?.refresh_token, config.cookie.encryptionSecret)
 
-                    if(tokenSet.expired()){
-                        try {
-                            const newTokenSet = await client.refresh(tokenSet)
-                            accessToken = await newTokenSet.access_token
-                            redisClient.del(decrypted, (deleteErr : unknown, innerRes) => {
-                                if(deleteErr){
-                                    reply.status(500).send({
-                                        error: "Failed to delete old records and update it with a new token"
-                                    })
-                                    return
-                                }
+                    reply.setCookie('token', encrypted, 
+                    {
+                        domain: config.cookie.domain,
+                        path: config.cookie.path,
+                        sameSite: true,
+                        httpOnly: true
+                    })
+                }
 
-                                redisClient.set(newTokenSet.refresh_token as string, JSON.stringify(newTokenSet), (setError : unknown, mostInnerResponse) => {
-                                    
-                                    if(setError){
-                                        // Desirably, report this to Sentry
-                                        reply.status(500).send({
-                                            error: "Deleted the old token but failed to register the most recent one."
-                                        })
-                                        return;
-                                    }
-                                })
-                            })
-                        }catch(err : unknown){
-                            reply.redirect("/login")
-                            return;
-                        }
-                    }
-                    request.headers['Authorization'] = `Bearer ${accessToken}`
-
-                    console.log({request: request.headers})
+                done()
+                
             })
-            }else {
-                reply.status(401).send({
-                    error: "Unauthorized request"
-                })
-            }
+            .catch(error => {
+                console.log({error})
+                if(error.message == "403"){
+                    reply.status(403).send({
+                        error: 'Unauthorized Request'
+                    })
+                }else {
+                    done(error)
 
-            done();
-            
+                }
+            })
         })
+
         instance.register(proxy, {
             upstream: config.proxy.upstream,
             prefix: config.proxy.prefix || "",
@@ -229,7 +207,7 @@ Issuer.discover(config.auth.openidc_discovery_uri)
             replyOptions: {
                 rewriteRequestHeaders: (originalReq : IncomingHttpHeaders, headers : any) => {
                     console.log({
-                        originalReq
+                        headers
                     })
                 }
             }

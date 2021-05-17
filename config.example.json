@@ -9,7 +9,8 @@
         "secret": "<COOKIE SECRET>",
         "parseOptions": {},
         "domain": "localhost",
-        "path": "/"
+        "path": "/",
+        "encryptionSecret": "1234"
     },
     "auth": {
         "client_id": "<OAUTH2 CLIENT ID>",
@@ -20,6 +21,9 @@
     "app": {
         "useSSL": false,
         "domain": "localhost"
+    },
+    "storeConfig": {
+        "codeVerifierKeyName": "code_verifier",
+        "tokenCookieName": "token"
     }
-    
 }
