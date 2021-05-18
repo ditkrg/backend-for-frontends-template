@@ -180,9 +180,4 @@ export default class TokensManager {
             }
         })
     }
-
-
-
-
-
 }
