@@ -99,7 +99,7 @@ export default class TokensManager {
         return new Promise(async (resolve, reject) => {
             try {
                 const newTokenSet = await this.openIDClient.refresh(this.currentTokenSet as TokenSet)
-
+                
                 this.redisClient.set(newTokenSet.refresh_token as string, JSON.stringify(newTokenSet), (err : any, response : any) => {
                     if(err){
                         reject({
@@ -113,7 +113,9 @@ export default class TokensManager {
                         })
                         return;
                     }
-    
+                    
+                    this.redisClient.del(this.currentTokenSet?.refresh_token as string)
+                    
                     resolve({
                         hasExpired: true,
                         hasRefreshed: true,
