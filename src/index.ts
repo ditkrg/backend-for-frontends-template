@@ -1,4 +1,4 @@
-import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { FastifyReply, FastifyRequest } from "fastify";
 import { IncomingHttpHeaders, IncomingMessage } from "node:http";
 import { RedisClient } from "redis";
 import { Configurable } from "./types";
@@ -26,13 +26,14 @@ const redis    = require("redis");
 
 const started  = new Date().toISOString(); 
 
-const { configure }                  = require('./configurations');
+const { configure } = require('./configurations');
+const { encrypt }   = require("./encryption")
+
+const config : Configurable     = configure();
+const redisClient : RedisClient = redis.createClient(config.redisConnection);
+
 import { generators, custom, Issuer, TokenSet, Client } from "openid-client";
 import TokensManager from "./tokens-manager";
-const { encrypt, decrypt } = require("./encryption")
-
-const config : Configurable = configure();
-const redisClient : RedisClient = redis.createClient(config.redisConnection);
 
 Sentry.init({
     dsn: config.sentryConfig.dsn,
@@ -142,15 +143,7 @@ Issuer.discover(config.auth.openidc_discovery_uri)
     
         instance.get("/callback", async (request : IncomingMessage, reply: any) => {
             const params = client.callbackParams(request);
-            
-            // console.log("About to resolve")
-            // await new Promise((resolve : any, reject : any) => {
-            //     setTimeout(resolve, 2000); 
-            //     console.log("INside")
-            // })
-            // console.log("After")
 
-            
             redisClient.get(config.storeConfig.codeVerifierKeyName, (err : unknown, res : any) => {
                 if(!err){
                     console.log({res})
@@ -194,7 +187,7 @@ Issuer.discover(config.auth.openidc_discovery_uri)
 
             tokenManager.checkToken()
             .then(res => {
-                request.headers.Authorization = `Bearer ${res.tokenSet?.access_token}`
+                request.headers['Authorization'] = `Bearer ${res.tokenSet?.access_token}`
 
                 if(res.hasRefreshed){
                     const encrypted = encrypt(res.tokenSet?.refresh_token, config.cookie.encryptionSecret)
@@ -229,11 +222,10 @@ Issuer.discover(config.auth.openidc_discovery_uri)
             prefix: config.proxy.prefix || "",
             http2: config.proxy.enableHTTP2 || false,
             replyOptions: {
-                rewriteRequestHeaders: (originalReq : IncomingHttpHeaders, headers : any) => {
-                    console.log({
-                        headers
-                    })
-                }
+                rewriteRequestHeaders: (originalReq : IncomingHttpHeaders, headers : any) => ({
+                    ...headers, 
+                    'request-id': uuid()
+                })
             }
         })
 
