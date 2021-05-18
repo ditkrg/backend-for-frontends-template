@@ -89,9 +89,6 @@ export default class TokensManager {
           });
         }
       } catch (e) {
-        console.log({
-          edd: e,
-        });
         reject(e);
       }
     });
@@ -149,10 +146,6 @@ export default class TokensManager {
     return new Promise(async (resolve, reject) => {
       try {
         const isCurrentTokenValid = await this.validateToken();
-        console.log({
-          isCurrentTokenValid,
-          tokenSet: this.currentTokenSet,
-        });
         if (!isCurrentTokenValid.hasExpired) {
           resolve({
             isError: false,
@@ -174,7 +167,6 @@ export default class TokensManager {
                 this.currentTokenSet?.refresh_token as string,
                 (error: any, response: any) => {
                   if (error) {
-                    console.log({ error, e });
                     reject(new Error("403"));
                     return;
                   }
