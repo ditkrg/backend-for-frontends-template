@@ -4,7 +4,6 @@ import { decrypt } from "./encryption";
 import { Configurable } from "./types";
 import { Client as OpenIDClient } from "openid-client";
 import { TokenResponse } from "./types";
-import { Token } from "typescript";
 
 
 export default class TokensManager { 
@@ -115,7 +114,7 @@ export default class TokensManager {
                     }
                     
                     this.redisClient.del(this.currentTokenSet?.refresh_token as string)
-                    
+
                     resolve({
                         hasExpired: true,
                         hasRefreshed: true,
