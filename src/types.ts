@@ -42,14 +42,11 @@ interface TokenErrorResponse {
     code? : number
 }
 export interface TokenResponse { 
-    hasExpired? : boolean
-    hasRefreshed? : boolean
+    status: "valid" | "invalid" | "expired" | "refreshed"
     tokenSet? : TokenSet
     isError: boolean
     error?: TokenErrorResponse
 }
-
-
 export interface Configurable {
     proxy : ProxyConfig
     cookie: CookieConfig

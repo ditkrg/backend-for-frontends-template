@@ -1,183 +1,135 @@
 import { TokenSet } from "openid-client";
-import { RedisClient } from "redis";
 import { decrypt } from "./encryption";
 import { Configurable } from "./types";
 import { Client as OpenIDClient } from "openid-client";
 import { TokenResponse } from "./types";
+import { Token } from 'typescript';
 
 export default class TokensManager {
   private currentTokenSet?: TokenSet;
+  private encryptedToken : string = "";
+  private decryptedToken : string = "";
 
+  
   constructor(
     private readonly openIDClient: OpenIDClient,
-    private readonly redisClient: RedisClient,
+    private readonly redisClient: any,
     private readonly config: Configurable,
-    private readonly encryptedToken: string
   ) {
     this.redisClient = redisClient;
-    this.encryptedToken = encryptedToken;
   }
 
-  retrieveToken(): Promise<TokenResponse> {
-    return new Promise((resolve, reject) => {
+  
+
+  async validateToken(encryptedToken : string) : Promise<TokenResponse> { 
+    this.encryptedToken = encryptedToken;
+    
+    try {
+      const retriveExistingToken : TokenResponse = await this.retriveExistingToken();
+      const existingTokenHasExpired = this.checkExpiry(retriveExistingToken.tokenSet as TokenSet)
+
+      if(existingTokenHasExpired){
+        return await this.refreshToken(retriveExistingToken.tokenSet as TokenSet)
+      }else {
+        return retriveExistingToken;
+      }
+    }catch(error : unknown){
+      console.log({topLevelError: error})
+      throw new Error("401")
+    }
+  }
+
+  async retriveExistingToken() : Promise<TokenResponse> {
+    try {
       if (
         this.encryptedToken == "" ||
         this.encryptedToken == undefined ||
         this.encryptedToken == null
       ) {
-        reject({
+        throw({
           isError: true,
-          hasExpired: false,
+          status: "invalid",
           error: {
             errorType: "Error",
             message: "No cookie was set",
           },
-        } as TokenResponse);
-      }
-
-      const decrypted = decrypt(
-        this.encryptedToken,
-        this.config.cookie.encryptionSecret
-      );
-
-      this.redisClient.get(decrypted, (err: any, response: any) => {
-        if (err || response == null) {
-          reject({
-            isError: true,
-            error: {
-              errorType: "Error",
-              message:
-                "Failed to associate cookie with any records. This could be a possible cookie hijacking attack!",
-            },
-          } as TokenResponse);
-          return;
-        }
-
-        resolve({
-          isError: false,
-          hasExpired: false,
-          hasRefreshed: false,
-          tokenSet: new TokenSet(JSON.parse(response as string)),
         });
-      });
-    });
-  }
-
-  validateToken(): Promise<TokenResponse> {
-    return new Promise(async (resolve, reject) => {
-      try {
-        const token = (await this.retrieveToken()) as TokenResponse;
-        this.currentTokenSet = token.tokenSet;
-
-        if (this.currentTokenSet?.expired()) {
-          reject({
-            hasExpired: true,
-            hasRefreshed: false,
-            isError: true,
-            tokenSet: this.currentTokenSet,
-            error: {
-              errorType: "Error",
-              message: "Token has expired",
-            },
-          });
-        } else {
-          resolve({
-            hasExpired: false,
-            hasRefreshed: false,
-            isError: false,
-            tokenSet: this.currentTokenSet,
-          });
-        }
-      } catch (e) {
-        reject(e);
       }
-    });
-  }
 
-  refreshToken(): Promise<TokenResponse> {
-    return new Promise(async (resolve, reject) => {
-      try {
-        const newTokenSet = await this.openIDClient.refresh(
-          this.currentTokenSet as TokenSet
-        );
+      this.decryptedToken = decrypt(this.encryptedToken, this.config.cookie.encryptionSecret);
+      console.log({
+        decrypted: this.decryptedToken
+      })
+      const getCurrentTokenSet = await this.redisClient.get(this.decryptedToken);
 
-        this.redisClient.set(
-          newTokenSet.refresh_token as string,
-          JSON.stringify(newTokenSet),
-          (err: any, response: any) => {
-            if (err) {
-              reject({
-                hasExpired: true,
-                hasRefreshed: true,
-                isError: true,
-                error: {
-                  errorType: "Error",
-                  message: "Failed to update the store with new access token",
-                },
-              });
-              return;
-            }
-
-            this.redisClient.del(this.currentTokenSet?.refresh_token as string);
-
-            resolve({
-              hasExpired: true,
-              hasRefreshed: true,
-              tokenSet: newTokenSet,
-              isError: false,
-            });
-          }
-        );
-      } catch (e) {
-        reject({
-          hasExpired: true,
-          hasRefreshed: false,
+      if(getCurrentTokenSet == null){
+        throw({
           isError: true,
+          status: "invalid",
           error: {
             errorType: "Error",
-            message: e.message,
+            message: "Cookie could not be matched with any results!",
           },
-        });
+        }); 
       }
-    });
+
+      return({
+        isError: false,
+        status: "valid",
+        tokenSet: new TokenSet(JSON.parse(await getCurrentTokenSet))
+      })
+    }catch(error : any){
+      throw error;
+    }
   }
 
-  async checkToken(): Promise<TokenResponse> {
-    return new Promise(async (resolve, reject) => {
-      try {
-        const isCurrentTokenValid = await this.validateToken();
-        if (!isCurrentTokenValid.hasExpired) {
-          resolve({
-            isError: false,
-            hasExpired: false,
-            hasRefreshed: false,
-            tokenSet: this.currentTokenSet,
-          });
+  async refreshToken(tokenSet : TokenSet) : Promise<TokenResponse> {
+    try { 
+      const refreshedToken = await this.openIDClient.refresh(tokenSet);
+
+      await this.redisClient.set(this.decryptedToken, JSON.stringify(refreshedToken));
+      
+      return({
+        status: "refreshed",
+        isError: false,
+        tokenSet: refreshedToken
+      })
+    }catch(error : any){
+      console.log({
+        error,
+        type: error?.name
+      })
+
+      /* 
+        OPError will be thrown if the server replies with "invalid_grant". 
+        With the current flow of code, such a behavior will occur due to rapid requests that come after one another and the token manager will try to reconsume the same refresh token twice, to which the server replies with "invalid grant"; 
+        For that reaspn, if such a thing happens, the token manager will need to just get the tokenset from the DB and return it.
+      */
+      if(error.name == "OPError"){
+        try {
+          return this.redisClient.get(this.decryptedToken)
+        }catch(e : any){
+          throw e;
         }
-      } catch (err) {
-        if (err.isError && err.hasExpired) {
-          try {
-            const refresh: TokenResponse = await this.refreshToken();
-            resolve(refresh);
-          } catch (e) {
-            if (e.hasExpired && !e.hasRefreshed) {
-              reject(new Error("403"));
-            } else {
-              this.redisClient.del(
-                this.currentTokenSet?.refresh_token as string,
-                (error: any, response: any) => {
-                  if (error) {
-                    reject(new Error("403"));
-                    return;
-                  }
-                }
-              );
-            }
-          }
-        } else {
-          reject(new Error("403"));
-        }
+      }else {
+        throw error;
       }
-    });
+    }
+  } 
+
+  async deleteExistingToken() : Promise<boolean>{ 
+    try {
+      return this.redisClient.del(this.decryptedToken)
+    } catch (error : unknown) {
+      throw error;
+    }
   }
+
+  checkExpiry(tokenSet : TokenSet) : boolean {
+    return tokenSet.expired();
+  }
+
+
+
+  
 }

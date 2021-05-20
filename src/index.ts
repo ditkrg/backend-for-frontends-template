@@ -21,7 +21,6 @@ const path = require("path");
 const os = require("os");
 const hyperid = require("hyperid");
 const uuid = hyperid();
-const redis = require("redis");
 
 const started = new Date().toISOString();
 
@@ -29,10 +28,13 @@ const { configure } = require("./configurations");
 const { encrypt } = require("./encryption");
 
 const config: Configurable = configure();
-const redisClient: RedisClient = redis.createClient(config.redisConnection);
+
+import { createNodeRedisClient } from 'handy-redis';
+const redisClient = createNodeRedisClient(config.redisConnection as any);
 
 import { generators, custom, Issuer, TokenSet, Client } from "openid-client";
 import TokensManager from "./tokens-manager";
+import { TokenResponse } from "./types";
 
 Sentry.init({
   dsn: config.sentryConfig.dsn,
@@ -49,12 +51,12 @@ custom.setHttpOptionsDefaults({
   timeout: config.proxy.httpTimeout || 100000,
 });
 
-redisClient.on("error", function (error: any) {
+redisClient.nodeRedis.on("error", function (error: any) {
   console.error(error);
   process.exit();
 });
 
-redisClient.on("ready", function () {
+redisClient.nodeRedis.on("ready", function () {
   console.log(`Connected to Redis: ${config.redisConnection}`);
 });
 
@@ -121,25 +123,25 @@ Issuer.discover(config.auth.openidc_discovery_uri)
           // it should be httpOnly (not readable by javascript) and encrypted.
           redisClient.set(
             config.storeConfig.codeVerifierKeyName,
-            code_verifier,
-            async (err: unknown, res: any) => {
-              if (!err) {
-                const code_challenge = generators.codeChallenge(code_verifier);
+            code_verifier
+          )
+          .then(async _response => {
+            const code_challenge = generators.codeChallenge(code_verifier);
 
-                const authorizationURL = await client.authorizationUrl({
-                  scope: "openid profile offline_access",
-                  code_challenge,
-                  code_challenge_method: "S256",
-                });
+            const authorizationURL = await client.authorizationUrl({
+              scope: "openid profile offline_access",
+              code_challenge,
+              code_challenge_method: "S256",
+            });
 
-                reply.redirect(authorizationURL);
-              } else {
-                reply.status(500).send({
-                  error: "Code verifier could not be stored in database",
-                });
-              }
-            }
-          );
+            reply.redirect(authorizationURL);
+          })
+          .catch(error => {
+            reply.status(500).send({
+              error: "Code verifier could not be stored in database",
+            });
+          })
+
         }
       );
 
@@ -148,46 +150,41 @@ Issuer.discover(config.auth.openidc_discovery_uri)
         async (request: IncomingMessage, reply: any) => {
           const params = client.callbackParams(request);
 
-          redisClient.get(
-            config.storeConfig.codeVerifierKeyName,
-            (err: unknown, res: any) => {
-              if (!err) {
-                client
-                  .callback(callbackWithHost, params, { code_verifier: res }) // => Promise
-                  .then(function (tokenSet: any) {
-                    const { refresh_token } = tokenSet;
-                    const encrypted = encrypt(
-                      refresh_token,
-                      config.cookie.encryptionSecret
-                    );
-
-                    redisClient.set(
-                      refresh_token,
-                      JSON.stringify(tokenSet),
-                      (err: unknown, res: any) => {
-                        if (!err) {
-                          reply
-                            .setCookie("token", encrypted, {
-                              domain: config.cookie.domain,
-                              path: config.cookie.path,
-                              sameSite: true,
-                              httpOnly: true,
-                            })
-                            .redirect("/");
-                        } else {
-                          reply.status(500).send({
-                            error: "Failed to store refresh token in database",
-                          });
-                        }
-                      }
-                    );
+          try { 
+            const getCodeVerifierFromDB : Promise<string> | any = await redisClient.get(config.storeConfig.codeVerifierKeyName);
+            
+            client
+            .callback(callbackWithHost, params, { code_verifier: await getCodeVerifierFromDB }) // => Promise
+            .then(async function (tokenSet: any) {
+              const { refresh_token } = tokenSet;
+              const identifier = uuid();
+              const encrypted = encrypt(
+                identifier,
+                config.cookie.encryptionSecret
+              );
+              redisClient.set(identifier, JSON.stringify(tokenSet))
+              .then(_response => {
+                reply
+                  .setCookie("token", encrypted, {
+                    domain: config.cookie.domain,
+                    path: config.cookie.path,
+                    sameSite: true,
+                    httpOnly: true,
                   })
-                  .catch((e: any) =>
-                    console.error("Error occurred in callback", { e })
-                  );
-              }
-            }
-          );
+                  .redirect("/");
+              }).catch(err => reply.status(500).send({
+                error: "Failed to store refresh token in database",
+              }))
+            })
+            .catch((e: any) =>
+              console.error("Error occurred in callback", { e })
+            );
+              
+          }catch(error : unknown) {
+            reply.status(500).send({
+              error: "Failed to store refresh token in database",
+            });
+          }
         }
       );
 
@@ -203,36 +200,41 @@ Issuer.discover(config.auth.openidc_discovery_uri)
         const tokenManager = new TokensManager(
           client,
           redisClient,
-          config,
-          token
+          config
         );
 
         tokenManager
-          .checkToken()
-          .then((res) => {
+          .validateToken(token)
+          .then((res : any) => {
+           
             request.headers[
               "Authorization"
             ] = `Bearer ${res.tokenSet?.access_token}`;
-
-            if (res.hasRefreshed) {
-              const encrypted = encrypt(
-                res.tokenSet?.refresh_token,
-                config.cookie.encryptionSecret
-              );
-
-              reply.setCookie("token", encrypted, {
-                domain: config.cookie.domain,
-                path: config.cookie.path,
-                sameSite: true,
-                httpOnly: true,
-              });
+            if (res.status == "refreshed") {
+              // const encrypted = encrypt(
+              //   res.tokenSet?.refresh_token,
+              //   config.cookie.encryptionSecret
+              // );
+              console.log({
+                passedToCookie: res.tokenSet?.refresh_token
+              })
+              // reply.clearCookie('token', {path: config.cookie.path })
+              // reply.setCookie("token", encrypted, {
+              //   domain: config.cookie.domain,
+              //   path: config.cookie.path,
+              //   sameSite: true,
+              //   httpOnly: true,
+              // });
             }
 
             done();
           })
           .catch((error) => {
-            if (error.message == "403") {
-              reply.status(403).send({
+            console.log({ error });
+
+            if (error.message == "401") {
+              reply.clear
+              reply.status(401).send({
                 error: "Unauthorized Request",
               });
             } else {
