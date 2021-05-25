@@ -1,9 +1,9 @@
 {
-  "name": "Backend-For-Frontends-Template",
+  "name": "backend-for-frontends-template",
   "version": "1.0.0",
   "description": "A template application to be used by the Digital Development Team at the Department of Information Technology of Kurdistan Regional Government for implementing a basic Backend-for-Frontends Pattern that handles all oAuth2 and Open-ID Operations on behalf of the client and reverse proxies the request to protected resources.",
   "main": "index.js",
-  "repository": "https://githuh.com/ditkrg/backend-for-frontends-template",
+  "repository": "https://github.com/ditkrg/backend-for-frontends-template",
   "author": "Brusk Hamarash",
   "license": "MIT",
   "private": true,
