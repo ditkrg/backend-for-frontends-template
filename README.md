@@ -29,51 +29,16 @@ $ yarn start:prod
 ## Environment Variables
 
 ```bash
-CONFIGURATIONS_FILE_PATH=/path/to/config.json
-PORT=3002
-REDIS_URL=redis://127.0.0.1:6397
+PORT=3002 # The port to listen on
 ```
 
 ## Configurations
 
-The following configurations need to be given to the software in order for it to run properly. Reference this file in the Environment variable "CONFIGURATIONS_FILE_PATH", relative to the dist directory. 
+The app uses uses [node-config](https://github.com/lorenwest/node-config) for configuration, check their [wiki](https://github.com/lorenwest/node-config/wiki) to see how to provide configuration values.
 
-A template file named "config.example.json" can be found in the root directory:
+A template file [example.json](config/example.json) can be found in the config directory.
 
-```json
-{
-    "proxy": {
-        "upstream": "<UPSTREAM URL>",
-        "prefix": "<URL PREFIX TO REVERSE>",
-        "enableHTTP2": false,
-        "httpTimeout": 10000
-    },
-    "cookie": {
-        "secret": "<COOKIE SECRET>",
-        "parseOptions": {},
-        "domain": "localhost",
-        "path": "/",
-        "encryptionSecret": "1234"
-    },
-    "auth": {
-        "client_id": "<OAUTH2 CLIENT ID>",
-        "client_secret": "<OAUTH2 CLIENT SECRET>",
-        "redirect_endpoint": "<CALLBACK ENDPOINT USED BY IDP>",
-        "openidc_discovery_uri": "<OPEN ID PROVIDER .well-known CONFIGS>"
-    },
-    "app": {
-        "useSSL": false,
-        "domain": "localhost"
-    },
-    "storeConfig": {
-        "codeVerifierKeyName": "code_verifier",
-        "tokenCookieName": "token"
-    },
-    "sentryConfig": {
-        "dsn": "<SENTRY DSN>"
-    }
-}
-```
+*You can also check the [types](src/types.ts)* source file to see the allowed configuration values.
 
 ## License
 
