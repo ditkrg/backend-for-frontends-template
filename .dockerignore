@@ -1,2 +1,6 @@
 *.js
+*.md
+.git
+.github
+.vscode
 /node_modules
