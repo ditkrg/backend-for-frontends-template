@@ -25,7 +25,6 @@ jobs:
       - name: Build and push image
         uses: docker/build-push-action@v2.4.0
         with:
-          file: src/ECS.FIMS/Dockerfile
           push: true
           cache-from: type=registry,ref=${{ env.IMAGE }}:${{ env.BRANCH_NAME }}
           cache-to: type=inline
