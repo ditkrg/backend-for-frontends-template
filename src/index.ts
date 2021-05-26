@@ -1,7 +1,7 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { IncomingHttpHeaders, IncomingMessage } from "node:http";
 import { RedisClient } from "redis";
-import { Configurable } from "./types";
+import { getConfiguration, getEnvironment } from "./configurations";
 
 import * as Sentry from "@sentry/node";
 
@@ -10,7 +10,6 @@ const pkg = require("../package.json");
 if (process.env.NODE_ENV !== "production") {
   require("dotenv").config();
 }
-
 const fastify = require("fastify");
 const fastifyCookie = require("fastify-cookie");
 const fastifyHealtCheck = require("fastify-healthcheck");
@@ -21,31 +20,36 @@ const path = require("path");
 const os = require("os");
 const hyperid = require("hyperid");
 const uuid = hyperid();
-
 const started = new Date().toISOString();
+const config = getConfiguration();
 
-const { configure } = require("./configurations");
 const { encrypt } = require("./encryption");
 
-const config: Configurable = configure();
+// const config: Configurable = configure();
 
 import { createNodeRedisClient } from 'handy-redis';
-const redisClient = createNodeRedisClient(config.redisConnection as any);
+
+if (!config.redisConnection)
+  throw new Error('Redis is not configured')
+
+const redisClient = createNodeRedisClient(config.redisConnection);
 
 import { generators, custom, Issuer, TokenSet, Client } from "openid-client";
 import TokensManager from "./tokens-manager";
 import { TokenResponse } from "./types";
 
-Sentry.init({
-  dsn: config.sentryConfig.dsn,
-  environment: process.env.NODE_ENV,
-  release: `${pkg.name}@${pkg.version}`,
+// Only initialize sentry if we have it configured.
+if (config.sentryConfig)
+  Sentry.init({
+    dsn: config.sentryConfig.dsn,
+    environment: getEnvironment(),
+    release: `${pkg.name}@${pkg.version}`,
 
-  // Set tracesSampleRate to 1.0 to capture 100%
-  // of transactions for performance monitoring.
-  // We recommend adjusting this value in production
-  tracesSampleRate: 0.3,
-});
+    // Set tracesSampleRate to 1.0 to capture 100%
+    // of transactions for performance monitoring.
+    // We recommend adjusting this value in production
+    tracesSampleRate: 0.3,
+  });
 
 custom.setHttpOptionsDefaults({
   timeout: config.proxy.httpTimeout || 100000,
@@ -125,22 +129,22 @@ Issuer.discover(config.auth.openidc_discovery_uri)
             config.storeConfig.codeVerifierKeyName,
             code_verifier
           )
-          .then(async _response => {
-            const code_challenge = generators.codeChallenge(code_verifier);
+            .then(async _response => {
+              const code_challenge = generators.codeChallenge(code_verifier);
 
-            const authorizationURL = await client.authorizationUrl({
-              scope: "openid profile offline_access",
-              code_challenge,
-              code_challenge_method: "S256",
-            });
+              const authorizationURL = await client.authorizationUrl({
+                scope: "openid profile offline_access",
+                code_challenge,
+                code_challenge_method: "S256",
+              });
 
-            reply.redirect(authorizationURL);
-          })
-          .catch(error => {
-            reply.status(500).send({
-              error: "Code verifier could not be stored in database",
-            });
-          })
+              reply.redirect(authorizationURL);
+            })
+            .catch(error => {
+              reply.status(500).send({
+                error: "Code verifier could not be stored in database",
+              });
+            })
 
         }
       );
@@ -150,37 +154,37 @@ Issuer.discover(config.auth.openidc_discovery_uri)
         async (request: IncomingMessage, reply: any) => {
           const params = client.callbackParams(request);
 
-          try { 
-            const getCodeVerifierFromDB : Promise<string> | any = await redisClient.get(config.storeConfig.codeVerifierKeyName);
-            
+          try {
+            const getCodeVerifierFromDB: Promise<string> | any = await redisClient.get(config.storeConfig.codeVerifierKeyName);
+
             client
-            .callback(callbackWithHost, params, { code_verifier: await getCodeVerifierFromDB }) // => Promise
-            .then(async function (tokenSet: any) {
-              const { refresh_token } = tokenSet;
-              const identifier = uuid();
-              const encrypted = encrypt(
-                identifier,
-                config.cookie.encryptionSecret
+              .callback(callbackWithHost, params, { code_verifier: await getCodeVerifierFromDB }) // => Promise
+              .then(async function (tokenSet: any) {
+                const { refresh_token } = tokenSet;
+                const identifier = uuid();
+                const encrypted = encrypt(
+                  identifier,
+                  config.cookie.encryptionSecret
+                );
+                redisClient.set(identifier, JSON.stringify(tokenSet))
+                  .then(_response => {
+                    reply
+                      .setCookie("token", encrypted, {
+                        domain: config.cookie.domain,
+                        path: config.cookie.path,
+                        sameSite: true,
+                        httpOnly: true,
+                      })
+                      .redirect("/");
+                  }).catch(err => reply.status(500).send({
+                    error: "Failed to store refresh token in database",
+                  }))
+              })
+              .catch((e: any) =>
+                console.error("Error occurred in callback", { e })
               );
-              redisClient.set(identifier, JSON.stringify(tokenSet))
-              .then(_response => {
-                reply
-                  .setCookie("token", encrypted, {
-                    domain: config.cookie.domain,
-                    path: config.cookie.path,
-                    sameSite: true,
-                    httpOnly: true,
-                  })
-                  .redirect("/");
-              }).catch(err => reply.status(500).send({
-                error: "Failed to store refresh token in database",
-              }))
-            })
-            .catch((e: any) =>
-              console.error("Error occurred in callback", { e })
-            );
-              
-          }catch(error : unknown) {
+
+          } catch (error: unknown) {
             reply.status(500).send({
               error: "Failed to store refresh token in database",
             });
@@ -205,8 +209,8 @@ Issuer.discover(config.auth.openidc_discovery_uri)
 
         tokenManager
           .validateToken(token)
-          .then((res : any) => {
-           
+          .then((res: any) => {
+
             request.headers[
               "Authorization"
             ] = `Bearer ${res.tokenSet?.access_token}`;
@@ -262,7 +266,7 @@ Issuer.discover(config.auth.openidc_discovery_uri)
     });
 
     console.log(`Listening on PORT: ${process.env.PORT}`);
-    server.listen(process.env.PORT, "0.0.0.0");
+    server.listen(process.env.PORT ?? 3002, "0.0.0.0");
   })
   .catch((e: any) =>
     console.error(

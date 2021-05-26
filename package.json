@@ -1,16 +1,16 @@
 {
-  "name": "Backend-For-Frontends-Template",
+  "name": "backend-for-frontends-template",
   "version": "1.0.0",
   "description": "A template application to be used by the Digital Development Team at the Department of Information Technology of Kurdistan Regional Government for implementing a basic Backend-for-Frontends Pattern that handles all oAuth2 and Open-ID Operations on behalf of the client and reverse proxies the request to protected resources.",
   "main": "index.js",
-  "repository": "https://githuh.com/ditkrg/backend-for-frontends-template",
+  "repository": "https://github.com/ditkrg/backend-for-frontends-template",
   "author": "Brusk Hamarash",
   "license": "MIT",
   "private": true,
   "dependencies": {
     "@sentry/node": "^6.4.0",
-    "@types/redis": "^2.8.28",
     "body-parser": "^1.19.0",
+    "config": "^3.3.6",
     "cookie-parser": "^1.4.5",
     "crypto-js": "^4.0.0",
     "fastify": "^3.15.0",
@@ -21,7 +21,6 @@
     "global": "^4.4.0",
     "handy-redis": "^2.2.1",
     "hyperid": "^2.1.0",
-    "nodemon": "^2.0.7",
     "openid-client": "^4.7.2",
     "os": "^0.1.1",
     "passport": "^0.4.1",
@@ -33,12 +32,15 @@
   "scripts": {
     "build": "tsc",
     "start:prod": "node dist/index.js",
-    "start:dev": "NODE_ENV=development nodemon -r dotenv/config dist/index.js",
+    "start:dev": "NODE_ENV=development nodemon",
     "start:compiler": "tsc -w"
   },
   "devDependencies": {
+    "@types/config": "^0.0.38",
     "@types/node": "^14.14.41",
+    "@types/redis": "^2.8.28",
     "dotenv": "^8.2.0",
+    "nodemon": "^2.0.7",
     "typescript": "^4.2.4"
   }
 }

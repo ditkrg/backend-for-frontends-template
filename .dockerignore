@@ -1,2 +1,8 @@
 *.js
+*.md
+.git
+.github
+.vscode
+.dockerignore
+Dockerfile
 /node_modules
