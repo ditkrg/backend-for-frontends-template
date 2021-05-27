@@ -12,6 +12,7 @@ RUN yarn build
 
 FROM reg.dev.krd/library/node:14-alpine as production
 
+WORKDIR /app
 ENV NODE_ENV=production
 
 COPY  --from=build /app/*.json ./
