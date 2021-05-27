@@ -1,11 +1,9 @@
+/* eslint-disable */
 import { FastifyReply, FastifyRequest } from "fastify";
 import { IncomingHttpHeaders, IncomingMessage } from "node:http";
-import { RedisClient } from "redis";
 import { getConfiguration, getEnvironment } from "./configurations";
 
 import * as Sentry from "@sentry/node";
-
-const pkg = require("../package.json");
 
 if (process.env.NODE_ENV !== "production") {
   require("dotenv").config();

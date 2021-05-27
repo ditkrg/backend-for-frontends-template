@@ -1,5 +1,6 @@
-import { TokenSet } from "openid-client";
-import Sentry from "@sentry/node";
+/* eslint-disable */
+import { TokenSet } from 'openid-client'
+import Sentry from '@sentry/node'
 
 interface ProxyConfig {
     upstream: string
@@ -35,12 +36,12 @@ interface StoreConfig {
 }
 
 interface TokenErrorResponse {
-    errorType: "HTTPError" | "Error",
+    errorType: 'HTTPError' | 'Error',
     message: string
     code?: number
 }
 export interface TokenResponse {
-    status: "valid" | "invalid" | "expired" | "refreshed"
+    status: 'valid' | 'invalid' | 'expired' | 'refreshed'
     tokenSet?: TokenSet
     isError: boolean
     error?: TokenErrorResponse

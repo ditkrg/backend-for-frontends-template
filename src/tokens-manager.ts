@@ -1,9 +1,9 @@
+/* eslint-disable */
 import { TokenSet } from "openid-client";
 import { decrypt } from "./encryption";
 import { Configurable } from "./types";
 import { Client as OpenIDClient } from "openid-client";
 import { TokenResponse } from "./types";
-import { Token } from 'typescript';
 
 export default class TokensManager {
   private currentTokenSet?: TokenSet;
