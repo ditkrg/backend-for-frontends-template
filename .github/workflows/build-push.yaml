@@ -2,6 +2,8 @@ name: Build and Push Images
 
 on:
   push:
+    branches:
+      - "*"
 
 env:
   IMAGE: reg.dev.krd/common/backend-for-frontends
