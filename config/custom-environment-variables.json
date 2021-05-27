@@ -1,4 +1,17 @@
 {
+    "proxy": {
+        "prefix": "PROXY__PREFIX",
+        "upstream": "PROXY__UPSTREAM",
+        "enableHTTP2": "PROXY__ENABLE_HTTP2",
+        "httpTimeout": "PROXY__HTTP_TIMEOUT"
+    },
+    "auth": {
+        "client_id": "AUTH__CLIENT_ID",
+        "client_secret": "AUTH__CLIENT_SECRET",
+        "redirect_endpoint": "AUTH__REDIRECT_ENDPOINT",
+        "openidc_discovery_uri": "AUTH__OPENIDC_DISCOVERY_URL",
+        "scopes": "AUTH__SCOPES"
+    },
     "app": {
         "useSSL": "APP__USE_SSL",
         "domain": "APP__DOMAIN"
