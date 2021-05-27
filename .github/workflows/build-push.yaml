@@ -1,6 +1,10 @@
 name: Build and Push Images
 
-on: [push]
+on:
+  push:
+  release:
+    types:
+      - released
 
 env:
   IMAGE: reg.dev.krd/common/backend-for-frontends
