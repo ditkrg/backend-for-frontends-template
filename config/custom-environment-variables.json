@@ -1,0 +1,9 @@
+{
+    "app": {
+        "useSSL": "APP__USESSL",
+        "domain": "APP__DOMAIN"
+    },
+    "sentry": {
+        "dsn": "SENTRY__DSN"
+    }
+}
