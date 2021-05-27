@@ -1,9 +1,10 @@
 {
     "app": {
-        "useSSL": "APP__USESSL",
+        "useSSL": "APP__USE_SSL",
         "domain": "APP__DOMAIN"
     },
     "sentry": {
         "dsn": "SENTRY__DSN"
-    }
+    },
+    "redisConnection": "REDIS__CONNECTION_STRING"
 }
