@@ -129,22 +129,29 @@ Issuer.discover(config.auth.openidc_discovery_uri)
             config.storeConfig.codeVerifierKeyName,
             code_verifier
           )
-            .then(async _response => {
-              const code_challenge = generators.codeChallenge(code_verifier);
+          .then(async _response => {
+            const code_challenge = generators.codeChallenge(code_verifier);
 
-              const authorizationURL = await client.authorizationUrl({
-                scope: "openid profile offline_access",
-                code_challenge,
-                code_challenge_method: "S256",
-              });
+            let scopes = "openid profile offline_access";
 
-              reply.redirect(authorizationURL);
-            })
-            .catch(error => {
-              reply.status(500).send({
-                error: "Code verifier could not be stored in database",
-              });
-            })
+            if(config.auth.scopes){
+              scopes += " " + config.auth.scopes?.join(" ")
+            }
+            console.log({scopes})
+            const authorizationURL = await client.authorizationUrl({
+              scope: scopes,
+              code_challenge,
+              code_challenge_method: "S256",
+            });
+
+            reply.redirect(authorizationURL);
+          })
+          .catch(error => {
+            console.log({error})
+            reply.status(500).send({
+              error: "Code verifier could not be stored in database",
+            });
+          })
 
         }
       );
@@ -214,22 +221,6 @@ Issuer.discover(config.auth.openidc_discovery_uri)
             request.headers[
               "Authorization"
             ] = `Bearer ${res.tokenSet?.access_token}`;
-            if (res.status == "refreshed") {
-              // const encrypted = encrypt(
-              //   res.tokenSet?.refresh_token,
-              //   config.cookie.encryptionSecret
-              // );
-              console.log({
-                passedToCookie: res.tokenSet?.refresh_token
-              })
-              // reply.clearCookie('token', {path: config.cookie.path })
-              // reply.setCookie("token", encrypted, {
-              //   domain: config.cookie.domain,
-              //   path: config.cookie.path,
-              //   sameSite: true,
-              //   httpOnly: true,
-              // });
-            }
 
             done();
           })
