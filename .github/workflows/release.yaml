@@ -4,7 +4,6 @@ on:
   release:
     types:
       - published
-      - prereleased
 env:
   IMAGE: reg.dev.krd/common/backend-for-frontends
 
