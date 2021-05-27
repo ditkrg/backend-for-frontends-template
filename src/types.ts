@@ -21,7 +21,7 @@ interface AuthConfig {
     client_secret: string
     redirect_endpoint: string
     openidc_discovery_uri: string
-    scopes: string[]
+    scopes?: string[] | string
 }
 
 interface AppConfig {

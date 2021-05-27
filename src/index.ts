@@ -125,8 +125,12 @@ Issuer.discover(config.auth.openidc_discovery_uri)
 
               let scopes = "openid profile offline_access";
 
-              if (config.auth.scopes) {
-                scopes += " " + config.auth.scopes?.join(" ")
+
+              if (config.auth.scopes?.length) {
+                if (typeof config.auth.scopes === 'string')
+                  scopes += ` ${config.auth.scopes}`;
+                else
+                  scopes += ` ${config.auth.scopes.join(" ")}`;
               }
 
               console.log({ scopes })
