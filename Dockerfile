@@ -24,6 +24,6 @@ ENV NODE_ENV=production
 COPY  --from=build /app/*.json ./
 RUN yarn install
 COPY --from=build /app/dist ./dist
-
+COPY config /app/config
 
 ENTRYPOINT [ "yarn", "start:prod" ]
