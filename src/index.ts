@@ -55,8 +55,11 @@ redisClient.nodeRedis.on("ready", function () {
 
 const callbackWithHost = `${config.host}/${config.auth.redirect_endpoint}`;
 
+
+console.log(`OpenID Discovery Url: ${config.auth.openidc_discovery_uri}`)
+
 Issuer.discover(config.auth.openidc_discovery_uri)
-  .then((openIDResponse: any) => {
+  .then((openIDResponse) => {
     const server = fastify({
       logger: true,
     });
