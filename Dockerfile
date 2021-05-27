@@ -1,7 +1,7 @@
 FROM reg.dev.krd/library/node:14-alpine as build
 WORKDIR /app
 
-COPY *.json yarn.lock ./
+COPY package.json yarn.lock ./
 
 RUN yarn install 
 
@@ -15,9 +15,12 @@ FROM reg.dev.krd/library/node:14-alpine as production
 WORKDIR /app
 ENV NODE_ENV=production
 
-COPY  --from=build /app/*.json ./
+COPY  --from=build /app/yarn.lock ./
+COPY  --from=build /app/package.json ./
+
 RUN yarn install
-COPY --from=build /app/dist ./dist
+
 COPY config /app/config
+COPY --from=build /app/dist ./dist
 
 ENTRYPOINT [ "yarn", "start:prod" ]
