@@ -1,11 +1,4 @@
-FROM reg.dev.krd/library/node:14-alpine as setup
-
-RUN set -eux \
-    & apk add \
-    --no-cache \
-    yarn
-
-FROM setup as build
+FROM reg.dev.krd/library/node:14-alpine as build
 WORKDIR /app
 
 COPY *.json yarn.lock ./
@@ -17,7 +10,7 @@ COPY tsconfig.json ./
 
 RUN yarn build
 
-FROM build as production
+FROM reg.dev.krd/library/node:14-alpine as production
 
 ENV NODE_ENV=production
 
