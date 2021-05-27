@@ -19,5 +19,6 @@
     "sentry": {
         "dsn": "SENTRY__DSN"
     },
+    "baseUrl": "BASE_URL",
     "redisConnection": "REDIS__CONNECTION_STRING"
 }
