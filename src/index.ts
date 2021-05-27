@@ -53,21 +53,21 @@ redisClient.nodeRedis.on("ready", function () {
   console.log(`Connected to Redis: ${config.redisConnection}`);
 });
 
-const callbackWithHost = `${config.host}/${config.auth.redirect_endpoint}`;
+const redirectUrl = `${config.baseUrl}/${config.auth.redirectUrl}`;
 
+console.log(`OpenID Redirect Url: ${redirectUrl}`)
+console.log(`OpenID Discovery Url: ${config.auth.discoveryDocumentUrl}`)
 
-console.log(`OpenID Discovery Url: ${config.auth.openidc_discovery_uri}`)
-
-Issuer.discover(config.auth.openidc_discovery_uri)
+Issuer.discover(config.auth.discoveryDocumentUrl)
   .then((openIDResponse) => {
     const server = fastify({
       logger: true,
     });
 
     const client: Client = new openIDResponse.Client({
-      client_id: config.auth.client_id,
-      client_secret: config.auth.client_secret,
-      redirect_uris: [callbackWithHost],
+      client_id: config.auth.clientId,
+      client_secret: config.auth.clientSecret,
+      redirect_uris: [redirectUrl],
       response_types: ["code"],
     });
 
@@ -162,7 +162,7 @@ Issuer.discover(config.auth.openidc_discovery_uri)
             const getCodeVerifierFromDB: Promise<string> | any = await redisClient.get(config.storeConfig.codeVerifierKeyName);
 
             client
-              .callback(callbackWithHost, params, { code_verifier: await getCodeVerifierFromDB }) // => Promise
+              .callback(redirectUrl, params, { code_verifier: await getCodeVerifierFromDB }) // => Promise
               .then(async function (tokenSet: any) {
                 const { refresh_token } = tokenSet;
                 const identifier = uuid();

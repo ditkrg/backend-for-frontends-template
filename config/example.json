@@ -1,4 +1,5 @@
 {
+    "baseUrl": "http://localhost",
     "proxy": {
         "upstream": "<UPSTREAM URL>",
         "prefix": "<URL PREFIX TO REVERSE>",
@@ -13,15 +14,11 @@
         "encryptionSecret": "1234"
     },
     "auth": {
-        "client_id": "<OAUTH2 CLIENT ID>",
-        "client_secret": "<OAUTH2 CLIENT SECRET>",
-        "redirect_endpoint": "<CALLBACK ENDPOINT USED BY IDP>",
-        "openidc_discovery_uri": "<OPEN ID PROVIDER .well-known CONFIGS>",
+        "clientId": "<OAUTH2 CLIENT ID>",
+        "clientSecret": "<OAUTH2 CLIENT SECRET>",
+        "redirectUrl": "<CALLBACK ENDPOINT USED BY IDP>",
+        "discoveryDocumentUrl": "<OPEN ID PROVIDER .well-known CONFIGS>",
         "scopes": []
-    },
-    "app": {
-        "useSSL": false,
-        "domain": "localhost"
     },
     "storeConfig": {
         "codeVerifierKeyName": "code_verifier",

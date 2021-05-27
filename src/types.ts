@@ -1,4 +1,3 @@
-/* eslint-disable */
 import { TokenSet } from 'openid-client'
 import Sentry from '@sentry/node'
 
@@ -18,16 +17,11 @@ interface CookieConfig {
 }
 
 interface AuthConfig {
-    client_id: string
-    client_secret: string
-    redirect_endpoint: string
-    openidc_discovery_uri: string
+    clientId: string
+    clientSecret: string
+    redirectUrl: string
+    discoveryDocumentUrl: string
     scopes?: string[] | string
-}
-
-interface AppConfig {
-    useSSL: boolean
-    domain: string
 }
 
 interface StoreConfig {
@@ -50,9 +44,8 @@ export interface Configurable {
     proxy: ProxyConfig
     cookie: CookieConfig
     auth: AuthConfig
-    app: AppConfig
     storeConfig: StoreConfig
     sentry: Sentry.NodeOptions
-    host?: string
+    baseUrl: string;
     redisConnection?: string
 }

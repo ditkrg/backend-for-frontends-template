@@ -10,15 +10,17 @@ export function getEnvironment (): string {
 export function getConfiguration (): Configurable {
   const config: Configurable = configLoader.util.toObject()
 
+  configLoader.get('auth')
   configLoader.get('proxy')
   configLoader.get('cookie')
-  configLoader.get('auth')
-  configLoader.get('app')
-  configLoader.get('storeConfig')
-
-  if (!config.host) { config.host = `${config.app.useSSL ? 'https' : 'http'}://${config.app.domain}:${process.env.PORT}` }
+  configLoader.get('baseUrl')
 
   if (!config.redisConnection) { config.redisConnection = 'redis://127.0.0.1:6379' }
+
+  // Remove leading / if it exists
+  if (config.auth.redirectUrl && config.auth.redirectUrl.startsWith('/')) {
+    config.auth.redirectUrl = config.auth.redirectUrl.substr(1)
+  }
 
   if (config.sentry) {
     if (!config.sentry.environment) { config.sentry.environment = getEnvironment() }
