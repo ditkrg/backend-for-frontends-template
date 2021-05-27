@@ -39,17 +39,8 @@ import TokensManager from "./tokens-manager";
 import { TokenResponse } from "./types";
 
 // Only initialize sentry if we have it configured.
-if (config.sentryConfig)
-  Sentry.init({
-    dsn: config.sentryConfig.dsn,
-    environment: getEnvironment(),
-    release: `${pkg.name}@${pkg.version}`,
-
-    // Set tracesSampleRate to 1.0 to capture 100%
-    // of transactions for performance monitoring.
-    // We recommend adjusting this value in production
-    tracesSampleRate: 0.3,
-  });
+if (config.sentry)
+  Sentry.init(config.sentry);
 
 custom.setHttpOptionsDefaults({
   timeout: config.proxy.httpTimeout || 100000,
@@ -129,29 +120,30 @@ Issuer.discover(config.auth.openidc_discovery_uri)
             config.storeConfig.codeVerifierKeyName,
             code_verifier
           )
-          .then(async _response => {
-            const code_challenge = generators.codeChallenge(code_verifier);
+            .then(async _response => {
+              const code_challenge = generators.codeChallenge(code_verifier);
 
-            let scopes = "openid profile offline_access";
+              let scopes = "openid profile offline_access";
 
-            if(config.auth.scopes){
-              scopes += " " + config.auth.scopes?.join(" ")
-            }
-            console.log({scopes})
-            const authorizationURL = await client.authorizationUrl({
-              scope: scopes,
-              code_challenge,
-              code_challenge_method: "S256",
-            });
+              if (config.auth.scopes) {
+                scopes += " " + config.auth.scopes?.join(" ")
+              }
 
-            reply.redirect(authorizationURL);
-          })
-          .catch(error => {
-            console.log({error})
-            reply.status(500).send({
-              error: "Code verifier could not be stored in database",
-            });
-          })
+              console.log({ scopes })
+              const authorizationURL = await client.authorizationUrl({
+                scope: scopes,
+                code_challenge,
+                code_challenge_method: "S256",
+              });
+
+              reply.redirect(authorizationURL);
+            })
+            .catch(error => {
+              console.log({ error })
+              reply.status(500).send({
+                error: "Code verifier could not be stored in database",
+              });
+            })
 
         }
       );
