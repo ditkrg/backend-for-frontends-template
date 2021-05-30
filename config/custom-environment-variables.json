@@ -15,6 +15,7 @@
     "sentry": {
         "dsn": "SENTRY__DSN"
     },
+    "port": "PORT",
     "baseUrl": "BASE_URL",
     "redisConnection": "REDIS__CONNECTION_STRING"
 }

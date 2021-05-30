@@ -28,5 +28,7 @@ export function getConfiguration (): Configurable {
     config.sentry.release = `${pkg.name}@${pkg.version}`
   }
 
+  if (!config.port) { config.port = 3002 }
+
   return config
 }

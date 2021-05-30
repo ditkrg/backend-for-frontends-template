@@ -41,6 +41,7 @@ export interface TokenResponse {
     error?: TokenErrorResponse
 }
 export interface Configurable {
+    port: number
     proxy: ProxyConfig
     cookie: CookieConfig
     auth: AuthConfig
