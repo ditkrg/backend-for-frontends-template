@@ -12,10 +12,6 @@
         "discoveryDocumentUrl": "AUTH__DISCOVERY_DOCUMENT_URL",
         "scopes": "AUTH__SCOPES"
     },
-    "app": {
-        "useSSL": "APP__USE_SSL",
-        "domain": "APP__DOMAIN"
-    },
     "sentry": {
         "dsn": "SENTRY__DSN"
     },
