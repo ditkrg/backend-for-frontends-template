@@ -5,6 +5,10 @@
         "enableHTTP2": "PROXY__ENABLE_HTTP2",
         "httpTimeout": "PROXY__HTTP_TIMEOUT"
     },
+    "cookie": {
+        "secret": "COOKIE__SECRET",
+        "encryptionSecret": "COOKIE__ENCRYPTION_SECRET"
+    },
     "auth": {
         "clientId": "AUTH__CLIENT_ID",
         "clientSecret": "AUTH__CLIENT_SECRET",
