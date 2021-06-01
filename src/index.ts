@@ -253,8 +253,9 @@ Issuer.discover(config.auth.discoveryDocumentUrl)
       next();
     });
 
-    console.log(`Listening on PORT: ${config.port}`);
-    server.listen(config.port ?? 3002, "0.0.0.0");
+    const port = config.port ?? 3002;
+    console.log(`Listening on PORT: ${port}`);
+    server.listen(port, "0.0.0.0");
   })
   .catch((e: any) =>
     console.error(
