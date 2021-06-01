@@ -15,7 +15,10 @@ export function getConfiguration (): Configurable {
   configLoader.get('cookie')
   configLoader.get('baseUrl')
 
-  if (!config.redisConnection) { config.redisConnection = 'redis://127.0.0.1:6379' }
+  if (!config.redisConnection) {
+    console.log('Redis connection not configured, using local.')
+    config.redisConnection = 'redis://127.0.0.1:6379'
+  }
 
   // Remove leading / if it exists
   if (config.auth.redirectUrl && config.auth.redirectUrl.startsWith('/')) {
