@@ -46,7 +46,7 @@ export interface Configurable {
     cookie: CookieConfig
     auth: AuthConfig
     storeConfig: StoreConfig
-    sentry: Sentry.NodeOptions
+    sentry?: Sentry.NodeOptions
     baseUrl: string;
     redisConnection?: string
 }
