@@ -1,0 +1,31 @@
+{
+    "proxy": {
+        "upstream": "http://localhost:3001",
+        "prefix": "/api",
+        "enableHTTP2": false,
+        "httpTimeout": 10000
+    },
+    "cookie": {
+        "secret": "1324",
+        "parseOptions": {},
+        "domain": "localhost",
+        "path": "/",
+        "encryptionSecret": "1234"
+    },
+    "auth": {
+        "client_id": "23311a9c5fea4889a072b46225ea7da4",
+        "client_secret": "0f80937e491b46d58e005de454d52cde",
+        "redirect_endpoint": "callback",
+        "openidc_discovery_uri": "https://auth.dev.krd/.well-known/openid-configuration",
+        "scopes": ["frps-api"]
+    },
+    "app": {
+        "useSSL": false,
+        "domain": "localhost"
+    },
+    "storeConfig": {
+        "codeVerifierKeyName": "code_verifier",
+        "tokenCookieName": "token"
+    },
+    "sentryConfig": {}
+}

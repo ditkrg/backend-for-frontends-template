@@ -54,7 +54,7 @@ export interface Configurable {
     auth : AuthConfig
     app  : AppConfig
     storeConfig : StoreConfig
-    sentryConfig : SentryConfig 
+    sentryConfig? : SentryConfig 
     host? : string
     redisConnection? : string
 }
