@@ -50,15 +50,7 @@ redisClient.nodeRedis.on("error", function (error: any) {
 });
 
 redisClient.nodeRedis.on("ready", function () {
-  console.log(`Connected to Redis: ${config.redisConnection}`);
-});
-
-const redirectUrl = `${config.baseUrl}/${config.auth.redirectUrl}`;
-
-console.log(`OpenID Redirect Url: ${redirectUrl}`)
-console.log(`OpenID Discovery Url: ${config.auth.discoveryDocumentUrl}`)
-
-Issuer.discover(config.auth.discoveryDocumentUrl)
+  Issuer.discover(config.auth.discoveryDocumentUrl)
   .then((openIDResponse) => {
     const server = fastify({
       logger: true,
@@ -257,9 +249,20 @@ Issuer.discover(config.auth.discoveryDocumentUrl)
     console.log(`Listening on PORT: ${port}`);
     server.listen(port, "0.0.0.0");
   })
-  .catch((e: any) =>
+  .catch((e: any) => { 
     console.error(
       "Error occurred while trying to discover the Open ID Connect Configurations",
       { e }
     )
+
+    process.exit(2)
+  }
   );
+
+});
+
+const redirectUrl = `${config.baseUrl}/${config.auth.redirectUrl}`;
+
+console.log(`OpenID Redirect Url: ${redirectUrl}`)
+console.log(`OpenID Discovery Url: ${config.auth.discoveryDocumentUrl}`)
+
