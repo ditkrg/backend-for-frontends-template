@@ -103,7 +103,7 @@ redisClient.nodeRedis.on("ready", function () {
 
     server.register((instance: any, opts: any, next: () => {}) => {
       instance.get(
-        "/login",
+        "/auth/login",
         async function (request: FastifyRequest, reply: FastifyReply) {
           const code_verifier = generators.codeVerifier();
 
@@ -226,6 +226,25 @@ redisClient.nodeRedis.on("ready", function () {
             }
           });
       });
+
+      instance.get(
+        "/auth/userinfo",
+        async (request: IncomingMessage, reply: any) => {
+
+          try {
+            const bearerToken : string = request.headers["Authorization"] as string
+            
+            const userInfo = await client.userinfo(bearerToken.split(" ")[1])
+
+            reply.send(userInfo)
+
+          } catch (error: unknown) {
+            reply.status(500).send({
+              error: "Unknown error occurred",
+            });
+          }
+        }
+      );
 
       instance.register(proxy, {
         upstream: config.proxy.upstream,
