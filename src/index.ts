@@ -50,6 +50,14 @@ redisClient.nodeRedis.on("error", function (error: any) {
 });
 
 redisClient.nodeRedis.on("ready", function () {
+
+  console.log('Redis connected and ready')
+
+  const redirectUrl = `${config.baseUrl}/${config.auth.redirectUrl}`;
+
+  console.log(`OpenID Redirect Url: ${redirectUrl}`)
+  console.log(`OpenID Discovery Url: ${config.auth.discoveryDocumentUrl}`)
+
   Issuer.discover(config.auth.discoveryDocumentUrl)
   .then((openIDResponse) => {
     const server = fastify({
@@ -279,9 +287,3 @@ redisClient.nodeRedis.on("ready", function () {
   );
 
 });
-
-const redirectUrl = `${config.baseUrl}/${config.auth.redirectUrl}`;
-
-console.log(`OpenID Redirect Url: ${redirectUrl}`)
-console.log(`OpenID Discovery Url: ${config.auth.discoveryDocumentUrl}`)
-
