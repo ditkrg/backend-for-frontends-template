@@ -70,7 +70,7 @@ redisClient.nodeRedis.on("ready", function () {
       "onError",
       (request: any, reply: any, error: unknown, done: any) => {
         // Only send Sentry errors when not in development
-        if (process.env.NODE_ENV == "development") {
+        if (process.env.NODE_ENV !== "development") {
           Sentry.captureException(error);
         }
         done();
