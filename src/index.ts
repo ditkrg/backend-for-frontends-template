@@ -146,7 +146,7 @@ redisClient.nodeRedis.on("ready", function () {
       );
 
       instance.get(
-        "/callback",
+        "/auth/callback",
         async (request: IncomingMessage, reply: any) => {
           const params = client.callbackParams(request);
 
