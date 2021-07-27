@@ -254,6 +254,36 @@ redisClient.nodeRedis.on("ready", function () {
         }
       );
 
+      instance.get(
+        "/auth/logout",
+        function (request: any, reply: any) {
+          const {
+            cookies: { token },
+          } = request;
+
+          const tokenManager = new TokensManager(
+            client,
+            redisClient,
+            config
+          );
+
+          tokenManager.logOut(token)
+          .then(res => {
+            reply.clear
+            reply.clearCookie('token')
+            reply.redirect("/")
+          })
+          .catch(e => {
+            console.log({e})
+            reply.status(500).send({
+              error: "Unknown error occurred",
+            });
+          })
+          // .finally(() => next())
+          
+        }
+      )
+
       instance.register(proxy, {
         upstream: config.proxy.upstream,
         prefix: config.proxy.prefix || "",
