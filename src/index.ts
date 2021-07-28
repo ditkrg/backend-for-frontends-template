@@ -1,7 +1,7 @@
 /* eslint-disable */
 import { FastifyReply, FastifyRequest } from "fastify";
 import { IncomingHttpHeaders, IncomingMessage } from "node:http";
-import { getConfiguration, getEnvironment } from "./configurations";
+import { getConfiguration } from "./configurations";
 
 import * as Sentry from "@sentry/node";
 
