@@ -254,9 +254,9 @@ redisClient.nodeRedis.on("ready", function () {
         }
       );
 
-      instance.get(
+      instance.post(
         "/auth/logout",
-        function (request: any, reply: any) {
+        async function(request: any, reply: any) {
           const {
             cookies: { token },
           } = request;
@@ -266,20 +266,18 @@ redisClient.nodeRedis.on("ready", function () {
             redisClient,
             config
           );
-
-          tokenManager.logOut(token)
-          .then(res => {
+            
+          try {
+            await tokenManager.logOut(token);
             reply.clear
             reply.clearCookie('token')
             reply.redirect("/")
-          })
-          .catch(e => {
+          }catch(e){
             console.log({e})
             reply.status(500).send({
               error: "Unknown error occurred",
             });
-          })
-          // .finally(() => next())
+          }
           
         }
       )
