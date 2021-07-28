@@ -23,8 +23,5 @@
     "storeConfig": {
         "codeVerifierKeyName": "code_verifier",
         "tokenCookieName": "token"
-    },
-    "sentryConfig": {
-        "dsn": "<SENTRY DSN>"
     }
 }

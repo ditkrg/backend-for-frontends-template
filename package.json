@@ -14,7 +14,7 @@
     "cookie-parser": "^1.4.5",
     "crypto-js": "^4.0.0",
     "fastify": "^3.15.0",
-    "fastify-cookie": "^5.3.0",
+    "fastify-cookie": "^5.3.1",
     "fastify-healthcheck": "^3.1.0",
     "fastify-http-proxy": "^5.0.0",
     "fastify-status": "^2.2.1",
@@ -32,13 +32,20 @@
   "scripts": {
     "build": "tsc",
     "start:prod": "node dist/index.js",
-    "start:dev": "NODE_ENV=development nodemon",
+    "start:dev": "NODE_ENV=development nodemon -r dotenv/config",
     "start:compiler": "tsc -w"
   },
   "devDependencies": {
     "@types/config": "^0.0.38",
     "@types/node": "^14.14.41",
     "@types/redis": "^2.8.28",
+    "@typescript-eslint/eslint-plugin": "^4.22.0",
+    "@typescript-eslint/parser": "^4.22.0",
+    "eslint": "^7.25.0",
+    "eslint-config-standard": "^16.0.2",
+    "eslint-plugin-import": "^2.22.1",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^4.3.1",
     "dotenv": "^8.2.0",
     "nodemon": "^2.0.7",
     "typescript": "^4.2.4"

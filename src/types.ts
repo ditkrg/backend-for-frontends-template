@@ -1,60 +1,52 @@
-import { TokenSet } from "openid-client";
+import { TokenSet } from 'openid-client'
+import Sentry from '@sentry/node'
 
 interface ProxyConfig {
-    upstream : string 
-    prefix?  : string
-    enableHTTP2? : boolean,
-    httpTimeout : number
+    upstream: string
+    prefix?: string
+    enableHTTP2?: boolean,
+    httpTimeout: number
 }
 
-interface CookieConfig { 
-    secret : string 
-    parseOptions : {}
-    domain : string
-    path : string
+interface CookieConfig {
+    secret: string
+    parseOptions: {}
+    domain: string
+    path: string
     encryptionSecret: string
 }
 
 interface AuthConfig {
-    client_id : string
-    client_secret : string
-    redirect_endpoint : string
-    openidc_discovery_uri : string
-    scopes : string[]
-}
-
-interface AppConfig {
-    useSSL : boolean
-    domain : string
+    clientId: string
+    clientSecret: string
+    redirectUrl: string
+    discoveryDocumentUrl: string
+    scopes?: string[] | string
 }
 
 interface StoreConfig {
-    codeVerifierKeyName : string
-    tokenCookieName : string
+    codeVerifierKeyName: string
+    tokenCookieName: string
 }
 
-interface SentryConfig { 
-    dsn : string
-    environment : "development" | "production"
-}
 interface TokenErrorResponse {
-    errorType : "HTTPError" | "Error",
-    message : string 
-    code? : number
+    errorType: 'HTTPError' | 'Error',
+    message: string
+    code?: number
 }
-export interface TokenResponse { 
-    status: "valid" | "invalid" | "expired" | "refreshed"
-    tokenSet? : TokenSet
+export interface TokenResponse {
+    status: 'valid' | 'invalid' | 'expired' | 'refreshed'
+    tokenSet?: TokenSet
     isError: boolean
     error?: TokenErrorResponse
 }
 export interface Configurable {
-    proxy : ProxyConfig
+    port: number
+    proxy: ProxyConfig
     cookie: CookieConfig
-    auth : AuthConfig
-    app  : AppConfig
-    storeConfig : StoreConfig
-    sentryConfig : SentryConfig 
-    host? : string
-    redisConnection? : string
+    auth: AuthConfig
+    storeConfig: StoreConfig
+    sentry?: Sentry.NodeOptions
+    baseUrl: string;
+    redisConnection?: string
 }

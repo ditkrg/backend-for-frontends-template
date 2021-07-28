@@ -1,11 +1,9 @@
+/* eslint-disable */
 import { FastifyReply, FastifyRequest } from "fastify";
 import { IncomingHttpHeaders, IncomingMessage } from "node:http";
-import { RedisClient } from "redis";
 import { getConfiguration, getEnvironment } from "./configurations";
 
 import * as Sentry from "@sentry/node";
-
-const pkg = require("../package.json");
 
 if (process.env.NODE_ENV !== "production") {
   require("dotenv").config();
@@ -39,17 +37,8 @@ import TokensManager from "./tokens-manager";
 import { TokenResponse } from "./types";
 
 // Only initialize sentry if we have it configured.
-if (config.sentryConfig)
-  Sentry.init({
-    dsn: config.sentryConfig.dsn,
-    environment: getEnvironment(),
-    release: `${pkg.name}@${pkg.version}`,
-
-    // Set tracesSampleRate to 1.0 to capture 100%
-    // of transactions for performance monitoring.
-    // We recommend adjusting this value in production
-    tracesSampleRate: 0.3,
-  });
+if (config.sentry)
+  Sentry.init(config.sentry);
 
 custom.setHttpOptionsDefaults({
   timeout: config.proxy.httpTimeout || 100000,
@@ -61,21 +50,24 @@ redisClient.nodeRedis.on("error", function (error: any) {
 });
 
 redisClient.nodeRedis.on("ready", function () {
-  console.log(`Connected to Redis: ${config.redisConnection}`);
-});
 
-const callbackWithHost = `${config.host}/${config.auth.redirect_endpoint}`;
+  console.log('Redis connected and ready')
 
-Issuer.discover(config.auth.openidc_discovery_uri)
-  .then((openIDResponse: any) => {
+  const redirectUrl = `${config.baseUrl}/${config.auth.redirectUrl}`;
+
+  console.log(`OpenID Redirect Url: ${redirectUrl}`)
+  console.log(`OpenID Discovery Url: ${config.auth.discoveryDocumentUrl}`)
+
+  Issuer.discover(config.auth.discoveryDocumentUrl)
+  .then((openIDResponse) => {
     const server = fastify({
       logger: true,
     });
 
     const client: Client = new openIDResponse.Client({
-      client_id: config.auth.client_id,
-      client_secret: config.auth.client_secret,
-      redirect_uris: [callbackWithHost],
+      client_id: config.auth.clientId,
+      client_secret: config.auth.clientSecret,
+      redirect_uris: [redirectUrl],
       response_types: ["code"],
     });
 
@@ -86,7 +78,7 @@ Issuer.discover(config.auth.openidc_discovery_uri)
       "onError",
       (request: any, reply: any, error: unknown, done: any) => {
         // Only send Sentry errors when not in development
-        if (process.env.NODE_ENV == "development") {
+        if (process.env.NODE_ENV !== "development") {
           Sentry.captureException(error);
         }
         done();
@@ -119,7 +111,7 @@ Issuer.discover(config.auth.openidc_discovery_uri)
 
     server.register((instance: any, opts: any, next: () => {}) => {
       instance.get(
-        "/login",
+        "/auth/login",
         async function (request: FastifyRequest, reply: FastifyReply) {
           const code_verifier = generators.codeVerifier();
 
@@ -129,35 +121,40 @@ Issuer.discover(config.auth.openidc_discovery_uri)
             config.storeConfig.codeVerifierKeyName,
             code_verifier
           )
-          .then(async _response => {
-            const code_challenge = generators.codeChallenge(code_verifier);
+            .then(async _response => {
+              const code_challenge = generators.codeChallenge(code_verifier);
 
-            let scopes = "openid profile offline_access";
+              let scopes = "openid profile offline_access";
 
-            if(config.auth.scopes){
-              scopes += " " + config.auth.scopes?.join(" ")
-            }
-            console.log({scopes})
-            const authorizationURL = await client.authorizationUrl({
-              scope: scopes,
-              code_challenge,
-              code_challenge_method: "S256",
-            });
 
-            reply.redirect(authorizationURL);
-          })
-          .catch(error => {
-            console.log({error})
-            reply.status(500).send({
-              error: "Code verifier could not be stored in database",
-            });
-          })
+              if (config.auth.scopes?.length) {
+                if (typeof config.auth.scopes === 'string')
+                  scopes += ` ${config.auth.scopes}`;
+                else
+                  scopes += ` ${config.auth.scopes.join(" ")}`;
+              }
+
+              console.log({ scopes })
+              const authorizationURL = await client.authorizationUrl({
+                scope: scopes,
+                code_challenge,
+                code_challenge_method: "S256",
+              });
+
+              reply.redirect(authorizationURL);
+            })
+            .catch(error => {
+              console.log({ error })
+              reply.status(500).send({
+                error: "Code verifier could not be stored in database",
+              });
+            })
 
         }
       );
 
       instance.get(
-        "/callback",
+        "/auth/callback",
         async (request: IncomingMessage, reply: any) => {
           const params = client.callbackParams(request);
 
@@ -165,7 +162,7 @@ Issuer.discover(config.auth.openidc_discovery_uri)
             const getCodeVerifierFromDB: Promise<string> | any = await redisClient.get(config.storeConfig.codeVerifierKeyName);
 
             client
-              .callback(callbackWithHost, params, { code_verifier: await getCodeVerifierFromDB }) // => Promise
+              .callback(redirectUrl, params, { code_verifier: await getCodeVerifierFromDB }) // => Promise
               .then(async function (tokenSet: any) {
                 const { refresh_token } = tokenSet;
                 const identifier = uuid();
@@ -238,6 +235,55 @@ Issuer.discover(config.auth.openidc_discovery_uri)
           });
       });
 
+      instance.get(
+        "/auth/userinfo",
+        async (request: IncomingMessage, reply: any) => {
+
+          try {
+            const bearerToken : string = request.headers["Authorization"] as string
+            
+            const userInfo = await client.userinfo(bearerToken.split(" ")[1])
+
+            reply.send(userInfo)
+
+          } catch (error: unknown) {
+            reply.status(500).send({
+              error: "Unknown error occurred",
+            });
+          }
+        }
+      );
+
+      instance.get(
+        "/auth/logout",
+        function (request: any, reply: any) {
+          const {
+            cookies: { token },
+          } = request;
+
+          const tokenManager = new TokensManager(
+            client,
+            redisClient,
+            config
+          );
+
+          tokenManager.logOut(token)
+          .then(res => {
+            reply.clear
+            reply.clearCookie('token')
+            reply.redirect("/")
+          })
+          .catch(e => {
+            console.log({e})
+            reply.status(500).send({
+              error: "Unknown error occurred",
+            });
+          })
+          // .finally(() => next())
+          
+        }
+      )
+
       instance.register(proxy, {
         upstream: config.proxy.upstream,
         prefix: config.proxy.prefix || "",
@@ -256,12 +302,18 @@ Issuer.discover(config.auth.openidc_discovery_uri)
       next();
     });
 
-    console.log(`Listening on PORT: ${process.env.PORT}`);
-    server.listen(process.env.PORT ?? 3002, "0.0.0.0");
+    const port = config.port ?? 3002;
+    console.log(`Listening on PORT: ${port}`);
+    server.listen(port, "0.0.0.0");
   })
-  .catch((e: any) =>
+  .catch((e: any) => { 
     console.error(
       "Error occurred while trying to discover the Open ID Connect Configurations",
       { e }
     )
+
+    process.exit(2)
+  }
   );
+
+});

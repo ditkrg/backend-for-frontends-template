@@ -5,4 +5,5 @@
 .vscode
 .dockerignore
 Dockerfile
-/node_modules
+nodemon.json
+node_modules

@@ -1,9 +1,9 @@
+/* eslint-disable */
 import { TokenSet } from "openid-client";
 import { decrypt } from "./encryption";
 import { Configurable } from "./types";
 import { Client as OpenIDClient } from "openid-client";
 import { TokenResponse } from "./types";
-import { Token } from 'typescript';
 
 export default class TokensManager {
   private currentTokenSet?: TokenSet;
@@ -127,6 +127,21 @@ export default class TokensManager {
 
   checkExpiry(tokenSet : TokenSet) : boolean {
     return tokenSet.expired();
+  }
+  
+  async logOut(encryptedToken : string) : Promise<boolean> {
+    this.encryptedToken = encryptedToken;
+    try {
+      const retriveExistingToken : TokenResponse = await this.retriveExistingToken();
+      
+      await this.openIDClient.revoke(retriveExistingToken?.tokenSet?.access_token as string)
+      await this.deleteExistingToken();
+      
+      return true
+
+    }catch(error : unknown){
+      return false
+    }
   }
 
 

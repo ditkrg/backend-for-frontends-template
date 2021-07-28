@@ -1,0 +1,25 @@
+{
+    "proxy": {
+        "prefix": "PROXY__PREFIX",
+        "upstream": "PROXY__UPSTREAM",
+        "enableHTTP2": "PROXY__ENABLE_HTTP2",
+        "httpTimeout": "PROXY__HTTP_TIMEOUT"
+    },
+    "cookie": {
+        "secret": "COOKIE__SECRET",
+        "encryptionSecret": "COOKIE__ENCRYPTION_SECRET"
+    },
+    "auth": {
+        "clientId": "AUTH__CLIENT_ID",
+        "clientSecret": "AUTH__CLIENT_SECRET",
+        "redirectUrl": "AUTH__REDIRECT_URL",
+        "discoveryDocumentUrl": "AUTH__DISCOVERY_DOCUMENT_URL",
+        "scopes": "AUTH__SCOPES"
+    },
+    "sentry": {
+        "dsn": "SENTRY__DSN"
+    },
+    "port": "PORT",
+    "baseUrl": "BASE_URL",
+    "redisConnection": "REDIS__CONNECTION_STRING"
+}
