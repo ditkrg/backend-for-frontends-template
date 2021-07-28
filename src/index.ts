@@ -225,7 +225,6 @@ redisClient.nodeRedis.on("ready", function () {
             console.log({ error });
 
             if (error.message == "401") {
-              reply.clear
               reply.status(401).send({
                 error: "Unauthorized Request",
               });
@@ -254,7 +253,7 @@ redisClient.nodeRedis.on("ready", function () {
         }
       );
 
-      instance.post(
+      instance.get(
         "/auth/logout",
         async function(request: any, reply: any) {
           const {
@@ -269,7 +268,6 @@ redisClient.nodeRedis.on("ready", function () {
             
           try {
             await tokenManager.logOut(token);
-            reply.clear
             reply.clearCookie('token')
             reply.redirect("/")
           }catch(e){
