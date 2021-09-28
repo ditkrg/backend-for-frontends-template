@@ -6,7 +6,6 @@ import { Client as OpenIDClient } from "openid-client";
 import { TokenResponse } from "./types";
 
 export default class TokensManager {
-  private currentTokenSet?: TokenSet;
   private encryptedToken : string = "";
   private decryptedToken : string = "";
 
@@ -14,7 +13,6 @@ export default class TokensManager {
   constructor(
     private readonly openIDClient: OpenIDClient,
     private readonly redisClient: any,
-    private readonly config: Configurable,
   ) {
     this.redisClient = redisClient;
   }
@@ -56,10 +54,8 @@ export default class TokensManager {
         });
       }
 
-      this.decryptedToken = decrypt(this.encryptedToken, this.config.cookie.encryptionSecret);
-      console.log({
-        decrypted: this.decryptedToken
-      })
+      this.decryptedToken = this.encryptedToken;
+  
       const getCurrentTokenSet = await this.redisClient.get(this.decryptedToken);
 
       if(getCurrentTokenSet == null){

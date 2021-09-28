@@ -13,7 +13,6 @@ interface CookieConfig {
     parseOptions: {}
     domain: string
     path: string
-    encryptionSecret: string
 }
 
 interface AuthConfig {
@@ -49,4 +48,5 @@ export interface Configurable {
     sentry?: Sentry.NodeOptions
     baseUrl: string;
     redisConnection?: string
+    enableLogging: boolean
 }
