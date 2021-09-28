@@ -7,7 +7,8 @@ import { TokenResponse } from "./types";
 
 export default class TokensManager {
   private encryptedToken : string = "";
-  private decryptedToken : string = "";
+  private decryptedToken: string = "";
+  refreshedTokenExpired : boolean = false
 
   
   constructor(
@@ -103,6 +104,7 @@ export default class TokensManager {
       */
       if(error.name == "OPError"){
         try {
+          this.refreshedTokenExpired = true
           return this.redisClient.get(this.decryptedToken)
         }catch(e : any){
           throw e;
@@ -138,9 +140,5 @@ export default class TokensManager {
     }catch(error : unknown){
       return false
     }
-  }
-
-
-
-  
+  }  
 }
