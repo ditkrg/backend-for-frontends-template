@@ -44,7 +44,7 @@ redisClient.nodeRedis.on('ready', async function () {
     const openIDResponse = await Issuer.discover(config.auth.discoveryDocumentUrl)
 
     const server = fastify({
-      logger: config.enableLogging
+      logger: config.enableFastifyLogging
     })
 
     // Register Fastify-Healthcheck plugin

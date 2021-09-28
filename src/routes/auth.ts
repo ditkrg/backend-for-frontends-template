@@ -1,7 +1,6 @@
 import { FastifyRequest, FastifyReply } from 'fastify'
 import { IncomingMessage } from 'node:http'
 import { generators, Client, TokenSet } from 'openid-client'
-import { encrypt } from '../encryption'
 import { Configurable } from '../types'
 import hyperid from 'hyperid'
 const uuid = hyperid()
@@ -12,15 +11,17 @@ export default (opts: { server: any, redisClient: any, config: Configurable, cli
     '/auth/login',
     async function (request: FastifyRequest, reply: FastifyReply) {
       const codeVerifier = generators.codeVerifier()
-
+      const codeVerifierKey = uuid()
       // store the codeVerifier in your framework's session mechanism, if it is a cookie based solution
       // it should be httpOnly (not readable by javascript) and encrypted.
 
       try {
         await redisClient.set(
-          config.storeConfig.codeVerifierKeyName,
+          codeVerifierKey,
           codeVerifier
         )
+
+        console.log({ codeVerifierKey })
 
         const codeChallenge = generators.codeChallenge(codeVerifier)
 
@@ -30,12 +31,14 @@ export default (opts: { server: any, redisClient: any, config: Configurable, cli
           if (typeof config.auth.scopes === 'string') { scopes += ` ${config.auth.scopes}` } else { scopes += ` ${config.auth.scopes.join(' ')}` }
         }
 
-        const authorizationURL = await client.authorizationUrl({
+        const authorizationURL = client.authorizationUrl({
           scope: scopes,
           code_challenge: codeChallenge,
-          code_challenge_method: 'S256'
+          code_challenge_method: 'S256',
+          state: codeVerifierKey
         })
 
+        console.log({ authorizationURL })
         reply.redirect(authorizationURL)
       } catch (error) {
         console.log({ error })
@@ -51,22 +54,26 @@ export default (opts: { server: any, redisClient: any, config: Configurable, cli
     async (request: IncomingMessage, reply: any) => {
       const params = client.callbackParams(request)
 
+      const { state } = params
+
+      if (!state) {
+        reply.status(400).send({
+          error: 'Compromised authorization code'
+        })
+        return
+      }
+
       try {
-        const getCodeVerifierFromDB: Promise<string> | any = await redisClient.get(config.storeConfig.codeVerifierKeyName)
+        const getCodeVerifierFromDB: Promise<string> | any = await redisClient.get(state)
 
         try {
-          const tokenSet: TokenSet = await client.callback(redirectUrl, params, { code_verifier: await getCodeVerifierFromDB })
-
-          const identifier = uuid()
-          // const encrypted = encrypt(
-          //   identifier,
-          //   config.cookie.encryptionSecret
-          // )
-
-          console.log({ identifier })
+          const tokenSet: TokenSet = await client.callback(redirectUrl, params, { code_verifier: await getCodeVerifierFromDB, state })
 
           try {
+            const identifier = uuid()
             await redisClient.set(identifier, JSON.stringify(tokenSet))
+
+            redisClient.del(state)
 
             reply
               .setCookie('token', identifier, {
@@ -79,7 +86,7 @@ export default (opts: { server: any, redisClient: any, config: Configurable, cli
               .redirect('/')
           } catch (error: any) {
             reply.status(500).send({
-              error: 'Failed to store refresh token in database'
+              error: 'Failed to store cookie'
             })
           }
         } catch (error: any) {
@@ -87,7 +94,7 @@ export default (opts: { server: any, redisClient: any, config: Configurable, cli
         }
       } catch (error: unknown) {
         reply.status(500).send({
-          error: 'Failed to store refresh token in database'
+          error: 'Failed to store refresh token'
         })
       }
     }
