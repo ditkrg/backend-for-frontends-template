@@ -7,6 +7,12 @@
   "author": "Brusk Hamarash",
   "license": "MIT",
   "private": true,
+  "scripts": {
+    "build": "tsc",
+    "start:prod": "node dist/index.js",
+    "start:dev": "NODE_ENV=development nodemon -r dotenv/config",
+    "start:compiler": "tsc -w"
+  },
   "dependencies": {
     "@sentry/node": "^6.4.0",
     "body-parser": "^1.19.0",
@@ -28,12 +34,6 @@
     "pkg-dir": "^5.0.0",
     "redis": "^3.1.2",
     "ts-node": "^9.1.1"
-  },
-  "scripts": {
-    "build": "tsc",
-    "start:prod": "node dist/index.js",
-    "start:dev": "NODE_ENV=development nodemon -r dotenv/config",
-    "start:compiler": "tsc -w"
   },
   "devDependencies": {
     "@types/config": "^0.0.38",
