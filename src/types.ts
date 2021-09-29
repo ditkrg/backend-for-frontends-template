@@ -12,7 +12,8 @@ interface CookieConfig {
     secret: string
     parseOptions: {}
     domain: string
-    path: string
+    path: string,
+    tokenCookieName?: string
 }
 
 interface AuthConfig {
@@ -21,11 +22,6 @@ interface AuthConfig {
     redirectUrl: string
     discoveryDocumentUrl: string
     scopes?: string[] | string
-}
-
-interface StoreConfig {
-    codeVerifierKeyName: string
-    tokenCookieName: string
 }
 
 interface TokenErrorResponse {
@@ -44,7 +40,6 @@ export interface Configurable {
     proxy: ProxyConfig
     cookie: CookieConfig
     auth: AuthConfig
-    storeConfig: StoreConfig
     sentry?: Sentry.NodeOptions
     baseUrl: string;
     redisConnection?: string

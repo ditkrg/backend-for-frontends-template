@@ -20,6 +20,10 @@ export function getConfiguration (): Configurable {
     config.redisConnection = 'redis://127.0.0.1:6379'
   }
 
+  if (!config.cookie.tokenCookieName) {
+    config.cookie.tokenCookieName = 'token'
+  }
+
   // Remove leading / if it exists
   if (config.auth.redirectUrl && config.auth.redirectUrl.startsWith('/')) {
     config.auth.redirectUrl = config.auth.redirectUrl.substr(1)
