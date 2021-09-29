@@ -1,7 +1,7 @@
 /* eslint-disable */
 import { FastifyReply, FastifyRequest } from "fastify";
 import { IncomingHttpHeaders, IncomingMessage } from "node:http";
-import { getConfiguration, getEnvironment } from "./configurations";
+import { getConfiguration } from "./configurations";
 
 import * as Sentry from "@sentry/node";
 
@@ -225,7 +225,6 @@ redisClient.nodeRedis.on("ready", function () {
             console.log({ error });
 
             if (error.message == "401") {
-              reply.clear
               reply.status(401).send({
                 error: "Unauthorized Request",
               });
@@ -256,7 +255,7 @@ redisClient.nodeRedis.on("ready", function () {
 
       instance.get(
         "/auth/logout",
-        function (request: any, reply: any) {
+        async function(request: any, reply: any) {
           const {
             cookies: { token },
           } = request;
@@ -266,20 +265,17 @@ redisClient.nodeRedis.on("ready", function () {
             redisClient,
             config
           );
-
-          tokenManager.logOut(token)
-          .then(res => {
-            reply.clear
+            
+          try {
+            await tokenManager.logOut(token);
             reply.clearCookie('token')
             reply.redirect("/")
-          })
-          .catch(e => {
+          }catch(e){
             console.log({e})
             reply.status(500).send({
               error: "Unknown error occurred",
             });
-          })
-          // .finally(() => next())
+          }
           
         }
       )
