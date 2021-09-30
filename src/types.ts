@@ -13,7 +13,7 @@ interface CookieConfig {
     parseOptions: {}
     domain: string
     path: string,
-    tokenCookieName?: string
+    tokenCookieName: string
 }
 
 interface AuthConfig {

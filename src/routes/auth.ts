@@ -35,7 +35,7 @@ export default (opts: { server: any, redisClient: any, config: Configurable, cli
         return
       } catch (e: any) {
         if (e.message === '401') {
-          reply.clearCookie('token')
+          reply.clearCookie(config.cookie.tokenCookieName)
 
           const codeVerifier = generators.codeVerifier()
           const codeVerifierKey = uuid()
@@ -102,7 +102,7 @@ export default (opts: { server: any, redisClient: any, config: Configurable, cli
             redisClient.del(state)
 
             reply
-              .setCookie('token', identifier, {
+              .setCookie(config.cookie.tokenCookieName, identifier, {
                 domain: config.cookie.domain,
                 path: config.cookie.path,
                 sameSite: true,

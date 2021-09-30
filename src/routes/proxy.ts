@@ -38,7 +38,7 @@ export default (opts: { server: any, client: any, redisClient: any, config: Conf
         return
       } catch (error : any) {
         if (error.message === '401') {
-          reply.clearCookie('token')
+          reply.clearCookie(config.cookie.tokenCookieName)
           reply.status(401).send({
             error: 'Unauthorized Request'
           })
@@ -79,7 +79,7 @@ export default (opts: { server: any, client: any, redisClient: any, config: Conf
 
         try {
           await tokenManager.logOut(token)
-          reply.clearCookie('token')
+          reply.clearCookie(config.cookie.tokenCookieName)
           reply.redirect('/')
         } catch (e) {
           console.log({ e })
