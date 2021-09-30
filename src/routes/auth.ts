@@ -77,7 +77,7 @@ export default (opts: { server: any, redisClient: any, config: Configurable, cli
 
   server.get(
     '/auth/callback',
-    async (request: IncomingMessage, reply: any) => {
+    async (request: IncomingMessage, reply: FastifyReply) => {
       const params = client.callbackParams(request)
 
       const { state } = params
@@ -116,7 +116,13 @@ export default (opts: { server: any, redisClient: any, config: Configurable, cli
             })
           }
         } catch (error: any) {
-          console.error('Error occurred in callback', { error })
+          console.error('Error occurred in callback', error)
+          if (error.name === 'OPError') {
+            reply.redirect(`/?error=${error.error}`)
+            return
+          }
+
+          reply.redirect('/?error=unknown')
         }
       } catch (error: unknown) {
         reply.status(500).send({
