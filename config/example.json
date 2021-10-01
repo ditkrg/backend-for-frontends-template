@@ -11,7 +11,7 @@
         "parseOptions": {},
         "domain": "localhost",
         "path": "/",
-        "encryptionSecret": "1234"
+        "tokenCookieName": "token"
     },
     "auth": {
         "clientId": "<OAUTH2 CLIENT ID>",
@@ -19,10 +19,6 @@
         "redirectUrl": "<CALLBACK ENDPOINT USED BY IDP>",
         "discoveryDocumentUrl": "<OPEN ID PROVIDER .well-known CONFIGS>",
         "scopes": []
-    },
-    "storeConfig": {
-        "codeVerifierKeyName": "code_verifier",
-        "tokenCookieName": "token"
     },
     "sentryConfig": {
         "dsn": "<SENTRY DSN>"
