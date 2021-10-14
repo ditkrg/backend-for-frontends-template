@@ -32,10 +32,7 @@ export default (opts: { server: any, client: any, redisClient: any, config: Conf
           throw Error('401')
         }
         const validatedToken = await tokenManager.validateToken(unsignedCookie.value)
-
         request.headers.Authorization = `Bearer ${validatedToken.tokenSet?.access_token}`
-        done()
-        return
       } catch (error : any) {
         if (error.message === '401') {
           reply.clearCookie(config.cookie.tokenCookieName)
@@ -93,16 +90,7 @@ export default (opts: { server: any, client: any, redisClient: any, config: Conf
     instance.register(proxy, {
       upstream: config.proxy.upstream,
       prefix: config.proxy.prefix || '',
-      http2: config.proxy.enableHTTP2 || false,
-      replyOptions: {
-        rewriteRequestHeaders: (
-          _originalReq: IncomingHttpHeaders,
-          headers: any
-        ) => ({
-          ...headers,
-          'request-id': uuid()
-        })
-      }
+      http2: config.proxy.enableHTTP2 || false
     })
 
     next()
