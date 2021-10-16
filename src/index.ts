@@ -1,315 +1,79 @@
-/* eslint-disable */
-import { FastifyReply, FastifyRequest } from "fastify";
-import { IncomingHttpHeaders, IncomingMessage } from "node:http";
-import { getConfiguration } from "./configurations";
+import { getConfiguration } from './configurations'
+import { Configurable } from './types'
 
-import * as Sentry from "@sentry/node";
+import devOpsRoutes from './routes/devops'
+import authRoutes from './routes/auth'
+import proxyRoutes from './routes/proxy'
 
-if (process.env.NODE_ENV !== "production") {
-  require("dotenv").config();
+import fastify from 'fastify'
+import fastifyCookie, { FastifyCookieOptions } from 'fastify-cookie'
+import fastifyHealtCheck from 'fastify-healthcheck'
+
+import { createNodeRedisClient } from 'handy-redis'
+import { custom, Issuer, Client } from 'openid-client'
+
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config()
 }
-const fastify = require("fastify");
-const fastifyCookie = require("fastify-cookie");
-const fastifyHealtCheck = require("fastify-healthcheck");
-const proxy = require("fastify-http-proxy");
 
-const pkgDir = require("pkg-dir");
-const path = require("path");
-const os = require("os");
-const hyperid = require("hyperid");
-const uuid = hyperid();
-const started = new Date().toISOString();
-const config = getConfiguration();
+const bootStartTime = new Date().toISOString()
+const config : Configurable = getConfiguration()
 
-const { encrypt } = require("./encryption");
+if (!config.redisConnection) { throw new Error('Redis is not configured') }
 
-// const config: Configurable = configure();
-
-import { createNodeRedisClient } from 'handy-redis';
-
-if (!config.redisConnection)
-  throw new Error('Redis is not configured')
-
-const redisClient = createNodeRedisClient(config.redisConnection);
-
-import { generators, custom, Issuer, TokenSet, Client } from "openid-client";
-import TokensManager from "./tokens-manager";
-import { TokenResponse } from "./types";
-
-// Only initialize sentry if we have it configured.
-if (config.sentry)
-  Sentry.init(config.sentry);
+const redisClient = createNodeRedisClient(config.redisConnection)
 
 custom.setHttpOptionsDefaults({
-  timeout: config.proxy.httpTimeout || 100000,
-});
+  timeout: config.proxy.httpTimeout || 100000
+})
 
-redisClient.nodeRedis.on("error", function (error: any) {
-  console.error(error);
-  process.exit();
-});
+redisClient.nodeRedis.on('error', function (error: any) {
+  console.error(error)
+  process.exit()
+})
 
-redisClient.nodeRedis.on("ready", function () {
-
+redisClient.nodeRedis.on('ready', async function () {
   console.log('Redis connected and ready')
 
-  const redirectUrl = `${config.baseUrl}/${config.auth.redirectUrl}`;
+  const redirectUrl = `${config.baseUrl}/${config.auth.redirectUrl}`
 
   console.log(`OpenID Redirect Url: ${redirectUrl}`)
   console.log(`OpenID Discovery Url: ${config.auth.discoveryDocumentUrl}`)
 
-  Issuer.discover(config.auth.discoveryDocumentUrl)
-  .then((openIDResponse) => {
+  try {
+    const openIDResponse = await Issuer.discover(config.auth.discoveryDocumentUrl)
+
     const server = fastify({
-      logger: true,
-    });
+      logger: config.enableFastifyLogging
+    })
+
+    // Register Fastify-Healthcheck plugin
+    server.register(fastifyHealtCheck)
+
+    server.register(fastifyCookie, {
+      secret: config.cookie.secret,
+      parseOptions: config.cookie.parseOptions || {}
+    } as FastifyCookieOptions)
 
     const client: Client = new openIDResponse.Client({
       client_id: config.auth.clientId,
       client_secret: config.auth.clientSecret,
       redirect_uris: [redirectUrl],
-      response_types: ["code"],
-    });
+      response_types: ['code']
+    })
 
-    // Register Fastify-Healthcheck plugin
-    server.register(fastifyHealtCheck);
+    devOpsRoutes({ server, bootStartTime, config })
+    authRoutes({ server, redisClient, config, client, redirectUrl })
+    proxyRoutes({ client, redisClient, server, config })
 
-    server.addHook(
-      "onError",
-      (request: any, reply: any, error: unknown, done: any) => {
-        // Only send Sentry errors when not in development
-        if (process.env.NODE_ENV !== "development") {
-          Sentry.captureException(error);
-        }
-        done();
-      }
-    );
-
-    server.get("/status", (request: FastifyRequest, reply: FastifyReply) => {
-      const rootDir = pkgDir.sync();
-      const { uptime } = process;
-      const { name = "", version = "" } = require(path.join(
-        rootDir,
-        "package.json"
-      ));
-
-      const host = os.hostname();
-
-      reply.status(200).send({
-        app: name,
-        version,
-        startTime: started,
-        uptime: uptime(),
-        host,
-      });
-    });
-
-    server.register(fastifyCookie, {
-      secret: config.cookie.secret,
-      parseOptions: config.cookie.parseOptions || {},
-    });
-
-    server.register((instance: any, opts: any, next: () => {}) => {
-      instance.get(
-        "/auth/login",
-        async function (request: FastifyRequest, reply: FastifyReply) {
-          const code_verifier = generators.codeVerifier();
-
-          // store the code_verifier in your framework's session mechanism, if it is a cookie based solution
-          // it should be httpOnly (not readable by javascript) and encrypted.
-          redisClient.set(
-            config.storeConfig.codeVerifierKeyName,
-            code_verifier
-          )
-            .then(async _response => {
-              const code_challenge = generators.codeChallenge(code_verifier);
-
-              let scopes = "openid profile offline_access";
-
-
-              if (config.auth.scopes?.length) {
-                if (typeof config.auth.scopes === 'string')
-                  scopes += ` ${config.auth.scopes}`;
-                else
-                  scopes += ` ${config.auth.scopes.join(" ")}`;
-              }
-
-              console.log({ scopes })
-              const authorizationURL = await client.authorizationUrl({
-                scope: scopes,
-                code_challenge,
-                code_challenge_method: "S256",
-              });
-
-              reply.redirect(authorizationURL);
-            })
-            .catch(error => {
-              console.log({ error })
-              reply.status(500).send({
-                error: "Code verifier could not be stored in database",
-              });
-            })
-
-        }
-      );
-
-      instance.get(
-        "/auth/callback",
-        async (request: IncomingMessage, reply: any) => {
-          const params = client.callbackParams(request);
-
-          try {
-            const getCodeVerifierFromDB: Promise<string> | any = await redisClient.get(config.storeConfig.codeVerifierKeyName);
-
-            client
-              .callback(redirectUrl, params, { code_verifier: await getCodeVerifierFromDB }) // => Promise
-              .then(async function (tokenSet: any) {
-                const { refresh_token } = tokenSet;
-                const identifier = uuid();
-                const encrypted = encrypt(
-                  identifier,
-                  config.cookie.encryptionSecret
-                );
-                redisClient.set(identifier, JSON.stringify(tokenSet))
-                  .then(_response => {
-                    reply
-                      .setCookie("token", encrypted, {
-                        domain: config.cookie.domain,
-                        path: config.cookie.path,
-                        sameSite: true,
-                        httpOnly: true,
-                      })
-                      .redirect("/");
-                  }).catch(err => reply.status(500).send({
-                    error: "Failed to store refresh token in database",
-                  }))
-              })
-              .catch((e: any) =>
-                console.error("Error occurred in callback", { e })
-              );
-
-          } catch (error: unknown) {
-            reply.status(500).send({
-              error: "Failed to store refresh token in database",
-            });
-          }
-        }
-      );
-
-      next();
-    });
-
-    server.register((instance: any, opts: any, next: () => {}) => {
-      instance.addHook("onRequest", (request: any, reply: any, done: any) => {
-        const {
-          cookies: { token },
-        } = request;
-
-        const tokenManager = new TokensManager(
-          client,
-          redisClient,
-          config
-        );
-
-        tokenManager
-          .validateToken(token)
-          .then((res: any) => {
-
-            request.headers[
-              "Authorization"
-            ] = `Bearer ${res.tokenSet?.access_token}`;
-
-            done();
-          })
-          .catch((error) => {
-            console.log({ error });
-
-            if (error.message == "401") {
-              reply.status(401).send({
-                error: "Unauthorized Request",
-              });
-            } else {
-              done(error);
-            }
-          });
-      });
-
-      instance.get(
-        "/auth/userinfo",
-        async (request: IncomingMessage, reply: any) => {
-
-          try {
-            const bearerToken : string = request.headers["Authorization"] as string
-            
-            const userInfo = await client.userinfo(bearerToken.split(" ")[1])
-
-            reply.send(userInfo)
-
-          } catch (error: unknown) {
-            reply.status(500).send({
-              error: "Unknown error occurred",
-            });
-          }
-        }
-      );
-
-      instance.get(
-        "/auth/logout",
-        async function(request: any, reply: any) {
-          const {
-            cookies: { token },
-          } = request;
-
-          const tokenManager = new TokensManager(
-            client,
-            redisClient,
-            config
-          );
-            
-          try {
-            await tokenManager.logOut(token);
-            reply.clearCookie('token')
-            reply.redirect("/")
-          }catch(e){
-            console.log({e})
-            reply.status(500).send({
-              error: "Unknown error occurred",
-            });
-          }
-          
-        }
-      )
-
-      instance.register(proxy, {
-        upstream: config.proxy.upstream,
-        prefix: config.proxy.prefix || "",
-        http2: config.proxy.enableHTTP2 || false,
-        replyOptions: {
-          rewriteRequestHeaders: (
-            originalReq: IncomingHttpHeaders,
-            headers: any
-          ) => ({
-            ...headers,
-            "request-id": uuid(),
-          }),
-        },
-      });
-
-      next();
-    });
-
-    const port = config.port ?? 3002;
-    console.log(`Listening on PORT: ${port}`);
-    server.listen(port, "0.0.0.0");
-  })
-  .catch((e: any) => { 
+    const port = config.port ?? 3002
+    console.log(`Listening on PORT: ${port}`)
+    server.listen(port, '0.0.0.0')
+  } catch (e) {
     console.error(
-      "Error occurred while trying to discover the Open ID Connect Configurations",
+      'Error occurred while trying to discover the Open ID Connect Configurations',
       { e }
     )
-
     process.exit(2)
   }
-  );
-
-});
+})

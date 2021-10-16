@@ -7,7 +7,7 @@
     },
     "cookie": {
         "secret": "COOKIE__SECRET",
-        "encryptionSecret": "COOKIE__ENCRYPTION_SECRET"
+        "tokenCookieName": "COOKIE__TOKEN_COOKIE_NAME"
     },
     "auth": {
         "clientId": "AUTH__CLIENT_ID",

@@ -7,9 +7,11 @@ on:
 env:
   IMAGE: reg.dev.krd/common/backend-for-frontends
 
+concurrency: release-${{ github.ref }}
+
 jobs:
   deploy:
-    runs-on: self-hosted # run on self-hosted runner
+    runs-on: [self-hosted, ubuntu]
     steps:
       - name: Get tag name
         shell: bash
