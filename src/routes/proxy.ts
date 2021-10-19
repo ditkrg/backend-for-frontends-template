@@ -1,12 +1,10 @@
-import { IncomingMessage, IncomingHttpHeaders } from 'http'
+import { IncomingMessage } from 'http'
 import TokensManager from '../tokens-manager'
 
 import proxy from 'fastify-http-proxy'
-import hyperid from 'hyperid'
 
 import { Configurable } from './../types'
 import { FastifyReply } from 'fastify'
-const uuid = hyperid()
 
 export default (opts: { server: any, client: any, redisClient: any, config: Configurable }) => {
   const { server, client, redisClient, config } = opts
@@ -69,13 +67,15 @@ export default (opts: { server: any, client: any, redisClient: any, config: Conf
           cookies: { token }
         } = request
 
+        const unsignedCookie : { valid: boolean, renew: boolean, value: string } = reply.unsignCookie(token) as any
+
         const tokenManager = new TokensManager(
           client,
           redisClient
         )
 
         try {
-          await tokenManager.logOut(token)
+          await tokenManager.logOut(unsignedCookie?.value)
           reply.clearCookie(config.cookie.tokenCookieName)
           reply.redirect('/')
         } catch (e) {
