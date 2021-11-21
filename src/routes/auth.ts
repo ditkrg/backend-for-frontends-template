@@ -12,7 +12,7 @@ export default (opts: { server: any, redisClient: any, config: Configurable, cli
     '/auth/login',
     async function (request: FastifyRequest, reply: FastifyReply) {
       const {
-        cookies: { token }
+        cookies: { [config.cookie.tokenCookieName]: token  }
       } = request
 
       try {
