@@ -107,7 +107,8 @@ export default (opts: { server: any, redisClient: any, config: Configurable, cli
                 path: config.cookie.path,
                 sameSite: true,
                 httpOnly: true,
-                signed: true
+                signed: true,
+                secure: true,
               })
               .redirect('/')
           } catch (error: any) {
