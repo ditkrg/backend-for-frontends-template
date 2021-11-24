@@ -7,6 +7,7 @@
     },
     "cookie": {
         "secret": "COOKIE__SECRET",
+        "domain": "COOKIE__DOMAIN",
         "tokenCookieName": "COOKIE__TOKEN_COOKIE_NAME"
     },
     "auth": {
