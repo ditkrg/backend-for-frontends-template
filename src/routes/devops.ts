@@ -1,8 +1,7 @@
 import { FastifyRequest, FastifyReply } from 'fastify'
 import { Configurable } from '../types'
+import { name, version } from '../../package.json'
 import os from 'os'
-import pkgDir from 'pkg-dir'
-import path from 'path'
 import * as Sentry from '@sentry/node'
 
 export default (opts: { server: any, bootStartTime: any, config: Configurable }) => {
@@ -26,22 +25,12 @@ export default (opts: { server: any, bootStartTime: any, config: Configurable })
     } else console.log('[WARN] Sentry not configured')
   } else console.log('[INFO] Skipping sentry in development')
 
-  server.get('/status', (request: FastifyRequest, reply: FastifyReply) => {
-    const rootDir: string = pkgDir.sync() as string
-    const { uptime } = process
-    const { name = '', version = '' } = require(path.join(
-      rootDir,
-      'package.json'
-    ))
-
-    const host = os.hostname()
-
+  server.get('/status', (request: FastifyRequest, reply: FastifyReply) =>
     reply.status(200).send({
       app: name,
       version,
       startTime: bootStartTime,
-      uptime: uptime(),
-      host
-    })
-  })
+      uptime: process.uptime(),
+      host: os.hostname()
+    }))
 }
