@@ -11,7 +11,7 @@ export default (opts: { server: any, client: any, redisClient: any, config: Conf
   server.register((instance: any, opts: any, next: () => {}) => {
     instance.addHook('onRequest', async (request: any, reply: FastifyReply, done: any) => {
       const {
-        cookies: { [config.cookie.tokenCookieName]: token },
+        cookies: { [config.cookie.tokenCookieName]: token }
       } = request
 
       const tokenManager = new TokensManager(
@@ -31,7 +31,6 @@ export default (opts: { server: any, client: any, redisClient: any, config: Conf
         }
         const validatedToken = await tokenManager.validateToken(unsignedCookie.value)
         request.headers.Authorization = `Bearer ${validatedToken.tokenSet?.access_token}`
-
       } catch (error : any) {
         if (error.message === '401') {
           reply.clearCookie(config.cookie.tokenCookieName)
@@ -65,7 +64,7 @@ export default (opts: { server: any, client: any, redisClient: any, config: Conf
       '/auth/logout',
       async function (request: any, reply: any) {
         const {
-          cookies: { token }
+          cookies: { [config.cookie.tokenCookieName]: token }
         } = request
 
         const unsignedCookie : { valid: boolean, renew: boolean, value: string } = reply.unsignCookie(token) as any
