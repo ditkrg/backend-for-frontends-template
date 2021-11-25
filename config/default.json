@@ -2,9 +2,9 @@
     "baseUrl": "http://localhost",
     "proxy": {
         "upstream": "<UPSTREAM URL>",
-        "prefix": "<URL PREFIX TO REVERSE>",
+        "prefix": "/api",
         "enableHTTP2": false,
-        "httpTimeout": 10000
+        "httpTimeout": 30000
     },
     "cookie": {
         "secret": "<COOKIE SECRET>",
@@ -16,7 +16,7 @@
     "auth": {
         "clientId": "<OAUTH2 CLIENT ID>",
         "clientSecret": "<OAUTH2 CLIENT SECRET>",
-        "redirectUrl": "<CALLBACK ENDPOINT USED BY IDP>",
+        "redirectUrl": "/auth/callback",
         "discoveryDocumentUrl": "<OPEN ID PROVIDER .well-known CONFIGS>",
         "scopes": []
     }
