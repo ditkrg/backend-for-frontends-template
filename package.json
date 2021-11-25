@@ -9,7 +9,7 @@
   "private": true,
   "scripts": {
     "build": "tsc",
-    "start:prod": "node dist/index.js",
+    "start:prod": "node dist/src/index.js",
     "start:dev": "NODE_ENV=development nodemon -r dotenv/config",
     "start:compiler": "tsc -w"
   },
