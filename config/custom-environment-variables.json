@@ -6,6 +6,7 @@
         "httpTimeout": "PROXY__HTTP_TIMEOUT"
     },
     "cookie": {
+        "path": "COOKIE__PATH",
         "secret": "COOKIE__SECRET",
         "domain": "COOKIE__DOMAIN",
         "tokenCookieName": "COOKIE__TOKEN_COOKIE_NAME"
@@ -18,8 +19,10 @@
         "scopes": "AUTH__SCOPES"
     },
     "sentry": {
-        "dsn": "SENTRY__DSN"
+        "dsn": "SENTRY__DSN",
+        "environment": "SENTRY__ENVIRONMENT"
     },
+    "enableFastifyLogging": "ENABLE_FASTIFY_LOGGING",
     "port": "PORT",
     "baseUrl": "BASE_URL",
     "redisConnection": "REDIS__CONNECTION_STRING"
