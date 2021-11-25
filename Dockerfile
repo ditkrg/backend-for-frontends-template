@@ -1,4 +1,4 @@
-FROM reg.dev.krd/library/node:14-alpine as build
+FROM reg.dev.krd/library/node:16-alpine as build
 WORKDIR /app
 
 COPY package.json yarn.lock ./
@@ -10,7 +10,7 @@ COPY tsconfig.json ./
 
 RUN yarn build
 
-FROM reg.dev.krd/library/node:14-alpine as production
+FROM reg.dev.krd/library/node:16-alpine as production
 
 WORKDIR /app
 ENV NODE_ENV=production
