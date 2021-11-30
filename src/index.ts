@@ -9,7 +9,7 @@ import fastify from 'fastify'
 import fastifyCookie, { FastifyCookieOptions } from 'fastify-cookie'
 import fastifyHealtCheck from 'fastify-healthcheck'
 
-import { createNodeRedisClient } from 'handy-redis'
+import { createClient } from 'redis'
 import { custom, Issuer, Client } from 'openid-client'
 
 if (process.env.NODE_ENV !== 'production') {
@@ -17,22 +17,24 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 const bootStartTime = new Date().toISOString()
-const config : Configurable = getConfiguration()
+const config: Configurable = getConfiguration()
 
 if (!config.redisConnection) { throw new Error('Redis is not configured') }
 
-const redisClient = createNodeRedisClient(config.redisConnection)
+export const redisClient = createClient({ url: config.redisConnection })
 
 custom.setHttpOptionsDefaults({
   timeout: config.proxy.httpTimeout || 100000
 })
 
-redisClient.nodeRedis.on('error', function (error: any) {
+redisClient.on('error', function (error: any) {
   console.error(error)
   process.exit()
-})
+});
 
-redisClient.nodeRedis.on('ready', async function () {
+(async () => {
+  await redisClient.connect()
+
   console.log('Redis connected and ready')
 
   const redirectUrl = `${config.baseUrl}/${config.auth.redirectUrl}`
@@ -63,8 +65,8 @@ redisClient.nodeRedis.on('ready', async function () {
     })
 
     devOpsRoutes({ server, bootStartTime, config })
-    authRoutes({ server, redisClient, config, client, redirectUrl })
-    proxyRoutes({ client, redisClient, server, config })
+    authRoutes({ server, config, client, redirectUrl })
+    proxyRoutes({ client, server, config })
 
     const port = config.port ?? 3002
     console.log(`Listening on PORT: ${port}`)
@@ -76,4 +78,4 @@ redisClient.nodeRedis.on('ready', async function () {
     )
     process.exit(2)
   }
-})
+})()

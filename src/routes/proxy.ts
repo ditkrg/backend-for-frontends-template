@@ -3,11 +3,12 @@ import TokensManager from '../tokens-manager'
 
 import proxy from 'fastify-http-proxy'
 
-import { Configurable } from './../types'
 import { FastifyReply } from 'fastify'
+import { Configurable } from './../types'
+import { redisClient } from '../index'
 
-export default (opts: { server: any, client: any, redisClient: any, config: Configurable }) => {
-  const { server, client, redisClient, config } = opts
+export default (opts: { server: any, client: any, config: Configurable }) => {
+  const { server, client, config } = opts
   server.register((instance: any, opts: any, next: () => {}) => {
     instance.addHook('onRequest', async (request: any, reply: FastifyReply, done: any) => {
       const {

@@ -2,12 +2,14 @@ import { FastifyRequest, FastifyReply } from 'fastify'
 import { IncomingMessage } from 'node:http'
 import { generators, Client, TokenSet } from 'openid-client'
 import { Configurable } from '../types'
+import { redisClient } from '../index'
 import hyperid from 'hyperid'
 import TokensManager from '../tokens-manager'
 const uuid = hyperid()
 
-export default (opts: { server: any, redisClient: any, config: Configurable, client: Client, redirectUrl: string }) => {
-  const { server, redisClient, config, client, redirectUrl } = opts
+export default (opts: { server: any, config: Configurable, client: Client, redirectUrl: string }) => {
+  const { server, config, client, redirectUrl } = opts
+
   server.get(
     '/auth/login',
     async function (request: FastifyRequest, reply: FastifyReply) {
