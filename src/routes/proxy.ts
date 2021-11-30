@@ -24,16 +24,23 @@ export default (opts: { server: any, client: any, redisClient: any, config: Conf
           throw Error('401')
         }
 
-        const unsignedCookie : { valid: boolean, renew: boolean, value: string } = reply.unsignCookie(token) as any
+        const unsignedCookie: { valid: boolean, renew: boolean, value: string } = reply.unsignCookie(token) as any
 
         if (!unsignedCookie.valid) {
           throw Error('401')
         }
         const validatedToken = await tokenManager.validateToken(unsignedCookie.value)
         request.headers.Authorization = `Bearer ${validatedToken.tokenSet?.access_token}`
-      } catch (error : any) {
+      } catch (error: any) {
         if (error.message === '401') {
-          reply.clearCookie(config.cookie.tokenCookieName)
+          reply.clearCookie(config.cookie.tokenCookieName, {
+            domain: config.cookie.domain,
+            path: config.cookie.path,
+            sameSite: true,
+            httpOnly: true,
+            signed: true,
+            secure: true
+          })
           reply.status(401).send({
             error: 'Unauthorized Request'
           })
@@ -47,7 +54,7 @@ export default (opts: { server: any, client: any, redisClient: any, config: Conf
       '/auth/userinfo',
       async (request: IncomingMessage, reply: any) => {
         try {
-          const bearerToken : string = request.headers.Authorization as string
+          const bearerToken: string = request.headers.Authorization as string
 
           const userInfo = await client.userinfo(bearerToken.split(' ')[1])
 
@@ -67,7 +74,7 @@ export default (opts: { server: any, client: any, redisClient: any, config: Conf
           cookies: { [config.cookie.tokenCookieName]: token }
         } = request
 
-        const unsignedCookie : { valid: boolean, renew: boolean, value: string } = reply.unsignCookie(token) as any
+        const unsignedCookie: { valid: boolean, renew: boolean, value: string } = reply.unsignCookie(token) as any
 
         const tokenManager = new TokensManager(
           client,

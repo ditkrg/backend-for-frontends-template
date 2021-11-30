@@ -12,13 +12,13 @@ export default (opts: { server: any, redisClient: any, config: Configurable, cli
     '/auth/login',
     async function (request: FastifyRequest, reply: FastifyReply) {
       const {
-        cookies: { [config.cookie.tokenCookieName]: token  }
+        cookies: { [config.cookie.tokenCookieName]: token }
       } = request
 
       try {
         if (!token) { throw Error('401') }
 
-        const unsignedCookie : { valid: boolean, renew: boolean, value: string } = reply.unsignCookie(token) as any
+        const unsignedCookie: { valid: boolean, renew: boolean, value: string } = reply.unsignCookie(token) as any
 
         const tokenManager = new TokensManager(
           client,
@@ -35,7 +35,14 @@ export default (opts: { server: any, redisClient: any, config: Configurable, cli
         return
       } catch (e: any) {
         if (e.message === '401') {
-          reply.clearCookie(config.cookie.tokenCookieName)
+          reply.clearCookie(config.cookie.tokenCookieName, {
+            domain: config.cookie.domain,
+            path: config.cookie.path,
+            sameSite: true,
+            httpOnly: true,
+            signed: true,
+            secure: true
+          })
 
           const codeVerifier = generators.codeVerifier()
           const codeVerifierKey = uuid()
@@ -108,7 +115,7 @@ export default (opts: { server: any, redisClient: any, config: Configurable, cli
                 sameSite: true,
                 httpOnly: true,
                 signed: true,
-                secure: true,
+                secure: true
               })
               .redirect('/')
           } catch (error: any) {
