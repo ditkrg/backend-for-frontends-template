@@ -62,7 +62,7 @@ export default (opts: { server: any, client: any, redisClient: any, config: Conf
 
     instance.get(
       '/auth/logout',
-      async function (request: any, reply: any) {
+      async function (request: any, reply: FastifyReply) {
         const {
           cookies: { [config.cookie.tokenCookieName]: token }
         } = request
@@ -76,7 +76,14 @@ export default (opts: { server: any, client: any, redisClient: any, config: Conf
 
         try {
           await tokenManager.logOut(unsignedCookie?.value)
-          reply.clearCookie(config.cookie.tokenCookieName)
+          reply.clearCookie(config.cookie.tokenCookieName, {
+            domain: config.cookie.domain,
+            path: config.cookie.path,
+            sameSite: true,
+            httpOnly: true,
+            signed: true,
+            secure: true
+          })
           reply.redirect('/')
         } catch (e) {
           console.log({ e })
