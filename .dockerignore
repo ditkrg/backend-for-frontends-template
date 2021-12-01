@@ -7,3 +7,4 @@
 Dockerfile
 nodemon.json
 node_modules
+dist

@@ -2,23 +2,25 @@ import { FastifyRequest, FastifyReply } from 'fastify'
 import { IncomingMessage } from 'node:http'
 import { generators, Client, TokenSet } from 'openid-client'
 import { Configurable } from '../types'
+import { redisClient } from '../index'
 import hyperid from 'hyperid'
 import TokensManager from '../tokens-manager'
 const uuid = hyperid()
 
-export default (opts: { server: any, redisClient: any, config: Configurable, client: Client, redirectUrl: string }) => {
-  const { server, redisClient, config, client, redirectUrl } = opts
+export default (opts: { server: any, config: Configurable, client: Client, redirectUrl: string }) => {
+  const { server, config, client, redirectUrl } = opts
+
   server.get(
     '/auth/login',
     async function (request: FastifyRequest, reply: FastifyReply) {
       const {
-        cookies: { [config.cookie.tokenCookieName]: token  }
+        cookies: { [config.cookie.tokenCookieName]: token }
       } = request
 
       try {
         if (!token) { throw Error('401') }
 
-        const unsignedCookie : { valid: boolean, renew: boolean, value: string } = reply.unsignCookie(token) as any
+        const unsignedCookie: { valid: boolean, renew: boolean, value: string } = reply.unsignCookie(token) as any
 
         const tokenManager = new TokensManager(
           client,
@@ -35,7 +37,14 @@ export default (opts: { server: any, redisClient: any, config: Configurable, cli
         return
       } catch (e: any) {
         if (e.message === '401') {
-          reply.clearCookie(config.cookie.tokenCookieName)
+          reply.clearCookie(config.cookie.tokenCookieName, {
+            domain: config.cookie.domain,
+            path: config.cookie.path,
+            sameSite: true,
+            httpOnly: true,
+            signed: true,
+            secure: true
+          })
 
           const codeVerifier = generators.codeVerifier()
           const codeVerifierKey = uuid()
@@ -108,7 +117,7 @@ export default (opts: { server: any, redisClient: any, config: Configurable, cli
                 sameSite: true,
                 httpOnly: true,
                 signed: true,
-                secure: true,
+                secure: true
               })
               .redirect('/')
           } catch (error: any) {

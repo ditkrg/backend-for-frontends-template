@@ -3,15 +3,16 @@ import TokensManager from '../tokens-manager'
 
 import proxy from 'fastify-http-proxy'
 
-import { Configurable } from './../types'
 import { FastifyReply } from 'fastify'
+import { Configurable } from './../types'
+import { redisClient } from '../index'
 
-export default (opts: { server: any, client: any, redisClient: any, config: Configurable }) => {
-  const { server, client, redisClient, config } = opts
+export default (opts: { server: any, client: any, config: Configurable }) => {
+  const { server, client, config } = opts
   server.register((instance: any, opts: any, next: () => {}) => {
     instance.addHook('onRequest', async (request: any, reply: FastifyReply, done: any) => {
       const {
-        cookies: { [config.cookie.tokenCookieName]: token },
+        cookies: { [config.cookie.tokenCookieName]: token }
       } = request
 
       const tokenManager = new TokensManager(
@@ -24,17 +25,23 @@ export default (opts: { server: any, client: any, redisClient: any, config: Conf
           throw Error('401')
         }
 
-        const unsignedCookie : { valid: boolean, renew: boolean, value: string } = reply.unsignCookie(token) as any
+        const unsignedCookie: { valid: boolean, renew: boolean, value: string } = reply.unsignCookie(token) as any
 
         if (!unsignedCookie.valid) {
           throw Error('401')
         }
         const validatedToken = await tokenManager.validateToken(unsignedCookie.value)
         request.headers.Authorization = `Bearer ${validatedToken.tokenSet?.access_token}`
-
-      } catch (error : any) {
+      } catch (error: any) {
         if (error.message === '401') {
-          reply.clearCookie(config.cookie.tokenCookieName)
+          reply.clearCookie(config.cookie.tokenCookieName, {
+            domain: config.cookie.domain,
+            path: config.cookie.path,
+            sameSite: true,
+            httpOnly: true,
+            signed: true,
+            secure: true
+          })
           reply.status(401).send({
             error: 'Unauthorized Request'
           })
@@ -48,7 +55,7 @@ export default (opts: { server: any, client: any, redisClient: any, config: Conf
       '/auth/userinfo',
       async (request: IncomingMessage, reply: any) => {
         try {
-          const bearerToken : string = request.headers.Authorization as string
+          const bearerToken: string = request.headers.Authorization as string
 
           const userInfo = await client.userinfo(bearerToken.split(' ')[1])
 
@@ -63,12 +70,12 @@ export default (opts: { server: any, client: any, redisClient: any, config: Conf
 
     instance.get(
       '/auth/logout',
-      async function (request: any, reply: any) {
+      async function (request: any, reply: FastifyReply) {
         const {
-          cookies: { token }
+          cookies: { [config.cookie.tokenCookieName]: token }
         } = request
 
-        const unsignedCookie : { valid: boolean, renew: boolean, value: string } = reply.unsignCookie(token) as any
+        const unsignedCookie: { valid: boolean, renew: boolean, value: string } = reply.unsignCookie(token) as any
 
         const tokenManager = new TokensManager(
           client,
@@ -77,7 +84,14 @@ export default (opts: { server: any, client: any, redisClient: any, config: Conf
 
         try {
           await tokenManager.logOut(unsignedCookie?.value)
-          reply.clearCookie(config.cookie.tokenCookieName)
+          reply.clearCookie(config.cookie.tokenCookieName, {
+            domain: config.cookie.domain,
+            path: config.cookie.path,
+            sameSite: true,
+            httpOnly: true,
+            signed: true,
+            secure: true
+          })
           reply.redirect('/')
         } catch (e) {
           console.log({ e })

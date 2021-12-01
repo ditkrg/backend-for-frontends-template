@@ -1,0 +1,5 @@
+{
+    "auth": {
+        "discoveryDocumentUrl": "https://auth.dev.krd/.well-known/openid-configuration"
+    }
+}

@@ -1,7 +1,6 @@
 import { Configurable } from './types'
 import configLoader from 'config'
-
-const pkg = require('../package.json')
+import { name as appName, version as appVersion } from '../package.json'
 
 export function getEnvironment (): string {
   return configLoader.util.getEnv('NODE_ENV')
@@ -28,7 +27,7 @@ export function getConfiguration (): Configurable {
   if (config.sentry) {
     if (!config.sentry.environment) { config.sentry.environment = getEnvironment() }
 
-    config.sentry.release = `${pkg.name}@${pkg.version}`
+    config.sentry.release = `${appName}@${appVersion}`
   }
 
   if (!config.port) { config.port = 3002 }
