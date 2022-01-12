@@ -11,7 +11,7 @@ concurrency: release-${{ github.ref }}
 
 jobs:
   deploy:
-    runs-on: [self-hosted, ubuntu]
+    runs-on: [self-hosted, ubuntu-focal]
     steps:
       - name: Get tag name
         shell: bash
