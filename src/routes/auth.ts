@@ -108,12 +108,15 @@ export default (opts: { server: any, config: Configurable, client: Client, redir
             const identifier = uuid()
             await redisClient.set(identifier, JSON.stringify(tokenSet))
 
-            redisClient.del(state)
+            await redisClient.del(state)
+            const today = new Date()
+            const daysFromNow = new Date(today).setDate(today.getDate() + 30)
 
             reply
               .setCookie(config.cookie.tokenCookieName, identifier, {
                 domain: config.cookie.domain,
                 path: config.cookie.path,
+                expires: new Date(daysFromNow),
                 sameSite: true,
                 httpOnly: true,
                 signed: true,
