@@ -14,6 +14,7 @@ interface CookieConfig {
     domain: string
     path: string,
     tokenCookieName: string
+    expiryinDays?: number
 }
 
 interface AuthConfig {

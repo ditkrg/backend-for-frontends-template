@@ -17,7 +17,8 @@ export default (opts: { server: any, client: any, config: Configurable }) => {
 
       const tokenManager = new TokensManager(
         client,
-        redisClient
+        redisClient,
+        config
       )
 
       try {
@@ -79,7 +80,8 @@ export default (opts: { server: any, client: any, config: Configurable }) => {
 
         const tokenManager = new TokensManager(
           client,
-          redisClient
+          redisClient,
+          config
         )
 
         try {

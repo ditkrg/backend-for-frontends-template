@@ -24,7 +24,8 @@ export default (opts: { server: any, config: Configurable, client: Client, redir
 
         const tokenManager = new TokensManager(
           client,
-          redisClient
+          redisClient,
+          config
         )
         if (!unsignedCookie.valid) { throw Error('401') }
 
@@ -54,7 +55,8 @@ export default (opts: { server: any, config: Configurable, client: Client, redir
           try {
             await redisClient.set(
               codeVerifierKey,
-              codeVerifier
+              codeVerifier,
+              { EX: 60 * 60 * 24 }
             )
 
             const codeChallenge = generators.codeChallenge(codeVerifier)
@@ -106,11 +108,14 @@ export default (opts: { server: any, config: Configurable, client: Client, redir
 
           try {
             const identifier = uuid()
-            await redisClient.set(identifier, JSON.stringify(tokenSet))
 
+            await redisClient.set(identifier, JSON.stringify(tokenSet), {
+              EX: 60 * 60 * 24 * (config.cookie.expiryinDays || 30)
+            })
             await redisClient.del(state)
+
             const today = new Date()
-            const daysFromNow = new Date(today).setDate(today.getDate() + 30)
+            const daysFromNow = new Date(today).setDate(today.getDate() + (config.cookie?.expiryinDays || 30))
 
             reply
               .setCookie(config.cookie.tokenCookieName, identifier, {
