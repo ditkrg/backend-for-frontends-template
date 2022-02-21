@@ -23,4 +23,8 @@ RUN yarn install
 COPY config /app/config
 COPY --from=build /app/dist ./dist
 
+RUN addgroup -S app -g 1001 && adduser -S -G app -u 1001 app
+RUN chown app:app -R /app
+USER app
+
 ENTRYPOINT [ "yarn", "start:prod" ]
