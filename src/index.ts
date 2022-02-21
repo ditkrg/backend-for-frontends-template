@@ -36,10 +36,6 @@ redisClient.on('error', function (error: any) {
   await redisClient.connect()
 
   console.log('Redis connected and ready')
-
-  const redirectUrl = `${config.baseUrl}/${config.auth.redirectUrl}`
-
-  console.log(`OpenID Redirect Url: ${redirectUrl}`)
   console.log(`OpenID Discovery Url: ${config.auth.discoveryDocumentUrl}`)
 
   try {

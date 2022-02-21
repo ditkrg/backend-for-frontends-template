@@ -24,6 +24,5 @@
     },
     "enableFastifyLogging": "ENABLE_FASTIFY_LOGGING",
     "port": "PORT",
-    "baseUrl": "BASE_URL",
     "redisConnection": "REDIS__CONNECTION_STRING"
 }

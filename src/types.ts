@@ -42,7 +42,6 @@ export interface Configurable {
     cookie: CookieConfig
     auth: AuthConfig
     sentry?: Sentry.NodeOptions
-    baseUrl: string;
     redisConnection?: string
     enableFastifyLogging: boolean
 }
