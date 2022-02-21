@@ -1,21 +1,35 @@
 import { FastifyRequest, FastifyReply } from 'fastify'
 import { IncomingMessage } from 'node:http'
-import { generators, Client, TokenSet } from 'openid-client'
+import { generators, Client, TokenSet, Issuer, ClientMetadata } from 'openid-client'
 import { Configurable } from '../types'
 import { redisClient } from '../index'
 import hyperid from 'hyperid'
 import TokensManager from '../tokens-manager'
 const uuid = hyperid()
 
-export default (opts: { server: any, config: Configurable, client: Client, redirectUrl: string }) => {
-  const { server, config, client, redirectUrl } = opts
+export default (opts: { server: any, config: Configurable, openIDResponse: Issuer<Client>, client: Client }) => {
+  const { server, config, openIDResponse, client } = opts
+  const clientConfig : ClientMetadata = {
+    client_id: config.auth.clientId,
+    client_secret: config.auth.clientSecret
+  }
 
   server.get(
     '/auth/login',
     async function (request: FastifyRequest, reply: FastifyReply) {
+      // Pluck cookies, hostname, protocol, and cookie for later use.
       const {
-        cookies: { [config.cookie.tokenCookieName]: token }
+        cookies: { [config.cookie.tokenCookieName]: token },
+        hostname,
+        protocol
       } = request
+
+      // Sets up the client with redirect_uri being the current host name
+      const client: Client = new openIDResponse.Client({
+        ...clientConfig,
+        response_types: ['code'],
+        redirect_uris: [`${protocol}://${hostname}/${config.auth.redirectUrl}`]
+      })
 
       try {
         if (!token) { throw Error('401') }
@@ -89,9 +103,13 @@ export default (opts: { server: any, config: Configurable, client: Client, redir
   server.get(
     '/auth/callback',
     async (request: IncomingMessage, reply: FastifyReply) => {
+      const { hostname, protocol } = request as any
+
       const params = client.callbackParams(request)
 
       const { state } = params
+
+      const redirectUrl = `${protocol}://${hostname}/${config.auth.redirectUrl}`
 
       if (!state) {
         reply.status(400).send({
@@ -135,6 +153,7 @@ export default (opts: { server: any, config: Configurable, client: Client, redir
           }
         } catch (error: any) {
           console.error('Error occurred in callback', error)
+          console.log({ error })
           if (error.name === 'OPError') {
             reply.redirect(`/?error=${error.error}`)
             return

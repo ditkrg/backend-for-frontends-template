@@ -6,9 +6,11 @@ import proxy from 'fastify-http-proxy'
 import { FastifyReply } from 'fastify'
 import { Configurable } from './../types'
 import { redisClient } from '../index'
+import { Client } from 'openid-client'
 
-export default (opts: { server: any, client: any, config: Configurable }) => {
-  const { server, client, config } = opts
+export default (opts: { server: any, config: Configurable, client: Client }) => {
+  const { server, config, client } = opts
+
   server.register((instance: any, opts: any, next: () => {}) => {
     instance.addHook('onRequest', async (request: any, reply: FastifyReply, done: any) => {
       const {
