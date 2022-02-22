@@ -1,4 +1,5 @@
 {
+    "baseUrl": "http://localhost",
     "proxy": {
         "upstream": "<UPSTREAM URL>",
         "prefix": "/api",
