@@ -14,6 +14,8 @@ export default (opts: { server: any, config: Configurable, openIDResponse: Issue
     client_secret: config.auth.clientSecret
   }
 
+  const baseUrlIsDefined = config.baseUrl && config.baseUrl.length > 0
+
   server.get(
     '/auth/login',
     async function (request: FastifyRequest, reply: FastifyReply) {
@@ -24,11 +26,13 @@ export default (opts: { server: any, config: Configurable, openIDResponse: Issue
         protocol
       } = request
 
+      const redirectUris = baseUrlIsDefined ? [`${config.baseUrl}/${config.auth.redirectUrl}`] : [`${protocol}://${hostname}/${config.auth.redirectUrl}`]
+
       // Sets up the client with redirect_uri being the current host name
       const client: Client = new openIDResponse.Client({
         ...clientConfig,
         response_types: ['code'],
-        redirect_uris: [`${protocol}://${hostname}/${config.auth.redirectUrl}`]
+        redirect_uris: redirectUris
       })
 
       try {
@@ -109,7 +113,7 @@ export default (opts: { server: any, config: Configurable, openIDResponse: Issue
 
       const { state } = params
 
-      const redirectUrl = `${protocol}://${hostname}/${config.auth.redirectUrl}`
+      const redirectUrl = baseUrlIsDefined ? `${config.baseUrl}/${config.auth.redirectUrl}` : `${protocol}://${hostname}/${config.auth.redirectUrl}`
 
       if (!state) {
         reply.status(400).send({
