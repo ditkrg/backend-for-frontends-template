@@ -12,7 +12,6 @@ export function getConfiguration (): Configurable {
   configLoader.get('auth')
   configLoader.get('proxy')
   configLoader.get('cookie')
-  configLoader.get('baseUrl')
 
   if (!config.redisConnection) {
     console.log('Redis connection not configured, using local.')

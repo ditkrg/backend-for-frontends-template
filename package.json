@@ -1,6 +1,6 @@
 {
   "name": "backend-for-frontends-template",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "description": "A template application to be used by the Digital Development Team at the Department of Information Technology of Kurdistan Regional Government for implementing a basic Backend-for-Frontends Pattern that handles all oAuth2 and Open-ID Operations on behalf of the client and reverse proxies the request to protected resources.",
   "main": "index.js",
   "repository": "https://github.com/ditkrg/backend-for-frontends-template",
@@ -14,19 +14,19 @@
     "start:compiler": "tsc -w"
   },
   "dependencies": {
-    "@sentry/node": "^6.4.0",
+    "@sentry/node": "^6.19.6",
     "body-parser": "^1.19.0",
     "config": "^3.3.6",
     "cookie-parser": "^1.4.5",
-    "fastify": "^3.15.0",
-    "fastify-cookie": "^5.3.1",
+    "fastify": "^3.28.0",
+    "fastify-cookie": "^5.6.1",
     "fastify-healthcheck": "^3.1.0",
-    "fastify-http-proxy": "^5.0.0",
+    "fastify-http-proxy": "^6.2.2",
     "fastify-status": "^2.2.1",
-    "hyperid": "^2.1.0",
-    "openid-client": "^4.7.2",
-    "os": "^0.1.1",
-    "redis": "^4.0.0"
+    "hyperid": "^3.0.1",
+    "openid-client": "^4.9.1",
+    "os": "^0.1.2",
+    "redis": "^4.0.6"
   },
   "devDependencies": {
     "@types/config": "^0.0.38",

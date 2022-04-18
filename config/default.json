@@ -1,5 +1,4 @@
 {
-    "baseUrl": "http://localhost",
     "proxy": {
         "upstream": "<UPSTREAM URL>",
         "prefix": "/api",
@@ -11,7 +10,8 @@
         "parseOptions": {},
         "domain": "localhost",
         "path": "/",
-        "tokenCookieName": "token"
+        "tokenCookieName": "token",
+        "expiryInDays": 30
     },
     "auth": {
         "clientId": "<OAUTH2 CLIENT ID>",

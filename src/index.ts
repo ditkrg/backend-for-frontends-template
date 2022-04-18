@@ -10,7 +10,7 @@ import fastifyCookie, { FastifyCookieOptions } from 'fastify-cookie'
 import fastifyHealtCheck from 'fastify-healthcheck'
 
 import { createClient } from 'redis'
-import { custom, Issuer, Client } from 'openid-client'
+import { Client, custom, Issuer } from 'openid-client'
 
 if (process.env.NODE_ENV !== 'production') {
   require('dotenv').config()
@@ -43,7 +43,12 @@ redisClient.on('error', function (error: any) {
   console.log(`OpenID Discovery Url: ${config.auth.discoveryDocumentUrl}`)
 
   try {
-    const openIDResponse = await Issuer.discover(config.auth.discoveryDocumentUrl)
+    const openIDResponse: Issuer<Client> = await Issuer.discover(config.auth.discoveryDocumentUrl)
+
+    const client: Client = new openIDResponse.Client({
+      client_id: config.auth.clientId,
+      client_secret: config.auth.clientSecret
+    })
 
     const server = fastify({
       logger: config.enableFastifyLogging
@@ -57,16 +62,9 @@ redisClient.on('error', function (error: any) {
       parseOptions: config.cookie.parseOptions || {}
     } as FastifyCookieOptions)
 
-    const client: Client = new openIDResponse.Client({
-      client_id: config.auth.clientId,
-      client_secret: config.auth.clientSecret,
-      redirect_uris: [redirectUrl],
-      response_types: ['code']
-    })
-
     devOpsRoutes({ server, bootStartTime, config })
-    authRoutes({ server, config, client, redirectUrl })
-    proxyRoutes({ client, server, config })
+    authRoutes({ server, config, openIDResponse, client })
+    proxyRoutes({ server, config, client })
 
     const port = config.port ?? 3002
     console.log(`Listening on PORT: ${port}`)

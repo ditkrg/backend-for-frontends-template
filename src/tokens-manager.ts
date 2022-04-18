@@ -1,7 +1,7 @@
 /* eslint-disable */
 import { TokenSet } from "openid-client";
 import { Client as OpenIDClient } from "openid-client";
-import { TokenResponse } from "./types";
+import { Configurable, TokenResponse } from "./types";
 
 export default class TokensManager {
 
@@ -13,6 +13,7 @@ export default class TokensManager {
   constructor(
     private readonly openIDClient: OpenIDClient,
     private readonly redisClient: any,
+    private readonly config: Configurable
   ) {
     this.redisClient = redisClient;
   }
@@ -29,6 +30,7 @@ export default class TokensManager {
       }
 
       return existingToken;
+
     } catch (error: unknown) {
       console.log({ topLevelError: error })
       throw new Error("401")
@@ -72,7 +74,7 @@ export default class TokensManager {
     try {
       const refreshedToken = await this.openIDClient.refresh(tokenSet);
 
-      await this.redisClient.set(this.tokenKey, JSON.stringify(refreshedToken));
+      await this.redisClient.set(this.tokenKey, JSON.stringify(refreshedToken), { EX: 60 * 60 * 24 * (this.config.cookie.expiryinDays || 30) });
 
       return ({
         status: "refreshed",

@@ -14,6 +14,7 @@ interface CookieConfig {
     domain: string
     path: string,
     tokenCookieName: string
+    expiryinDays?: number
 }
 
 interface AuthConfig {
@@ -41,7 +42,7 @@ export interface Configurable {
     cookie: CookieConfig
     auth: AuthConfig
     sentry?: Sentry.NodeOptions
-    baseUrl: string;
+    baseUrl?: string;
     redisConnection?: string
     enableFastifyLogging: boolean
 }
