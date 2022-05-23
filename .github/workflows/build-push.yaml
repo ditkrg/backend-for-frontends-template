@@ -5,6 +5,11 @@ on:
     branches:
       - "*"
 
+    paths-ignore:
+      - "**.md"
+      - ".vscode/**"
+      - ".github/**"
+
 concurrency: build-${{ github.ref }}
 
 jobs:
