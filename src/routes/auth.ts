@@ -21,11 +21,10 @@ export default (opts: { server: any, config: Configurable, openIDResponse: Issue
     async function (request: FastifyRequest, reply: FastifyReply) {
       // Pluck cookies, hostname, protocol, and cookie for later use.
       const {
-        cookies: { [config.cookie.tokenCookieName]: token }
+        cookies: { [config.cookie.tokenCookieName]: token },
+        hostname,
+        protocol
       } = request
-
-      const hostname = request.headers['x-forwarded-host'] || request.headers.hostname
-      const protocol = request.headers['x-forwarded-proto'] || request.headers.protocol
 
       const redirectUris = baseUrlIsDefined ? [`${config.baseUrl}/${config.auth.redirectUrl}`] : [`${protocol}://${hostname}/${config.auth.redirectUrl}`]
 
@@ -108,8 +107,7 @@ export default (opts: { server: any, config: Configurable, openIDResponse: Issue
   server.get(
     '/auth/callback',
     async (request: IncomingMessage, reply: FastifyReply) => {
-      const hostname = request.headers['x-forwarded-host'] || request.headers.host
-      const protocol = request.headers['x-forwarded-proto'] || request.headers.protocol
+      const { hostname, protocol } = request as any
 
       const params = client.callbackParams(request)
 
