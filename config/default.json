@@ -19,5 +19,9 @@
         "redirectUrl": "/auth/callback",
         "discoveryDocumentUrl": "<OPEN ID PROVIDER .well-known CONFIGS>",
         "scopes": []
+    },
+    "fastify": {
+        "trustProxy": true,
+        "enableLogging": false
     }
 }

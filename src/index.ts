@@ -51,7 +51,8 @@ redisClient.on('error', function (error: any) {
     })
 
     const server = fastify({
-      logger: config.enableFastifyLogging
+      trustProxy: config.fastify.trustProxy,
+      logger: config.fastify.enableLogging
     })
 
     // Register Fastify-Healthcheck plugin
