@@ -4,32 +4,15 @@ on:
   release:
     types:
       - published
-env:
-  IMAGE: reg.dev.krd/common/backend-for-frontends
 
 concurrency: release-${{ github.ref }}
 
 jobs:
-  deploy:
-    runs-on: [self-hosted, ubuntu-focal]
-    steps:
-      - name: Get tag name
-        shell: bash
-        run: |
-          echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
-
-      - name: Login to DIT Registry
-        uses: docker/login-action@v1
-        with:
-          registry: reg.dev.krd
-          username: ${{ secrets.HARBOR_USER }}
-          password: ${{ secrets.HARBOR_TOKEN }}
-
-      - name: Build and push image
-        uses: docker/build-push-action@v2.4.0
-        with:
-          push: true
-          cache-from: type=registry,ref=${{ env.IMAGE }}:${{ github.sha }}
-          cache-to: type=inline
-          tags: |
-            ${{ env.IMAGE }}:${{ env.TAG_NAME }}
+  build:
+    uses: ditkrg/common-github-workflows/.github/workflows/build-push-image.yaml@main
+    with:
+      tags: reg.dev.krd/common/backend-for-frontends:${{ github.ref_name }}
+      cache-from: type=registry,ref=reg.dev.krd/common/backend-for-frontends:${{ github.ref_name }}
+    secrets:
+      username: ${{ secrets.HARBOR_USER }}
+      password: ${{ secrets.HARBOR_TOKEN }}
