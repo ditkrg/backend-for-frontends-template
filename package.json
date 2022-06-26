@@ -17,7 +17,7 @@
     "@fastify/cookie": "^7.0.0",
     "@fastify/http-proxy": "^8.0.2",
     "@redis/client": "^1.1.0",
-    "@sentry/node": "^6.19.6",
+    "@sentry/node": "^7.3.0",
     "config": "^3.3.6",
     "fastify": "^4.1.0",
     "fastify-healthcheck": "^4.0.0",
