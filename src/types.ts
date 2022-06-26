@@ -44,5 +44,8 @@ export interface Configurable {
     sentry?: Sentry.NodeOptions
     baseUrl?: string;
     redisConnection?: string
-    enableFastifyLogging: boolean
+    fastify: {
+        trustProxy: boolean | number | string | Array<string>
+        enableLogging: boolean
+    }
 }
