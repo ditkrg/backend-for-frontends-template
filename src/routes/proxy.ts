@@ -1,7 +1,7 @@
 import { IncomingMessage } from 'http'
 import TokensManager from '../tokens-manager'
 
-import proxy from 'fastify-http-proxy'
+import proxy from '@fastify/http-proxy'
 
 import { FastifyReply } from 'fastify'
 import { Configurable } from './../types'

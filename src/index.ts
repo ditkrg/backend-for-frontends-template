@@ -6,10 +6,10 @@ import authRoutes from './routes/auth'
 import proxyRoutes from './routes/proxy'
 
 import fastify from 'fastify'
-import fastifyCookie, { FastifyCookieOptions } from 'fastify-cookie'
+import fastifyCookie, { FastifyCookieOptions } from '@fastify/cookie'
 import fastifyHealtCheck from 'fastify-healthcheck'
 
-import { createClient } from 'redis'
+import { createClient } from '@redis/client'
 import { Client, custom, Issuer } from 'openid-client'
 
 if (process.env.NODE_ENV !== 'production') {
@@ -51,7 +51,8 @@ redisClient.on('error', function (error: any) {
     })
 
     const server = fastify({
-      logger: config.enableFastifyLogging
+      trustProxy: config.fastify.trustProxy,
+      logger: config.fastify.enableLogging
     })
 
     // Register Fastify-Healthcheck plugin
@@ -68,7 +69,11 @@ redisClient.on('error', function (error: any) {
 
     const port = config.port ?? 3002
     console.log(`Listening on PORT: ${port}`)
-    server.listen(port, '0.0.0.0')
+
+    server.listen({
+      port,
+      host: '0.0.0.0'
+    })
   } catch (e) {
     console.error(
       'Error occurred while trying to discover the Open ID Connect Configurations',
