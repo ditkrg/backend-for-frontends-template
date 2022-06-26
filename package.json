@@ -19,7 +19,7 @@
     "config": "^3.3.6",
     "cookie-parser": "^1.4.6",
     "fastify": "^3.28.0",
-    "fastify-cookie": "^5.6.1",
+    "fastify-cookie": "^5.7.0",
     "fastify-healthcheck": "^3.1.0",
     "fastify-http-proxy": "^6.2.2",
     "fastify-status": "^2.2.1",
