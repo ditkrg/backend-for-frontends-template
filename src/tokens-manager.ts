@@ -51,7 +51,7 @@ export default class TokensManager {
 
     const tokenSet = await this.redisClient.get(this.tokenKey);
 
-    if (tokenSet == null) {
+    if (!tokenSet) {
       throw ({
         isError: true,
         status: "invalid",
