@@ -49,7 +49,7 @@ export default (opts: { server: any, config: Configurable, openIDResponse: Issue
 
         await tokenManager.validateToken(unsignedCookie.value)
         if (tokenManager.refreshedTokenExpired) {
-          redisClient.del(unsignedCookie.value)
+          await redisClient.del(unsignedCookie.value)
           throw Error('401')
         }
         reply.redirect('/')
