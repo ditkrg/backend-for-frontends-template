@@ -39,8 +39,6 @@ export default (opts: { server: any, config: Configurable, client: Client }) => 
         const accessToken = validatedToken.tokenSet?.access_token
         request.headers.Authorization = `Bearer ${accessToken}`
 
-        console.log("Logging the access token from validateToken ", { accessToken })
-
       } catch (error: any) {
         if (error.message === '401') {
           console.log("Throws 401 because token validation has failed", { error })
@@ -69,8 +67,6 @@ export default (opts: { server: any, config: Configurable, client: Client }) => 
           const bearerToken: string = request.headers.Authorization as string
 
           const userInfo = await client.userinfo(bearerToken.split(' ')[1])
-
-          console.log('Handling /auth/userinfo: ', { request, userInfo })
 
           reply.send(userInfo)
         } catch (error: unknown) {
