@@ -31,12 +31,20 @@ export default (opts: { server: any, config: Configurable, client: Client }) => 
         const unsignedCookie: { valid: boolean, renew: boolean, value: string } = reply.unsignCookie(token) as any
 
         if (!unsignedCookie.valid) {
+          console.log("Throws 401 because unsignedCookie.valid is false")
           throw Error('401')
         }
         const validatedToken = await tokenManager.validateToken(unsignedCookie.value)
-        request.headers.Authorization = `Bearer ${validatedToken.tokenSet?.access_token}`
+
+        const accessToken = validatedToken.tokenSet?.access_token
+        request.headers.Authorization = `Bearer ${accessToken}`
+
+        console.log("Logging the access token from validateToken ", { accessToken })
+
       } catch (error: any) {
         if (error.message === '401') {
+          console.log("Throws 401 because token validation has failed", { error })
+
           reply.clearCookie(config.cookie.tokenCookieName, {
             domain: config.cookie.domain,
             path: config.cookie.path,
@@ -61,6 +69,8 @@ export default (opts: { server: any, config: Configurable, client: Client }) => 
           const bearerToken: string = request.headers.Authorization as string
 
           const userInfo = await client.userinfo(bearerToken.split(' ')[1])
+
+          console.log('Handling /auth/userinfo: ', { request, userInfo })
 
           reply.send(userInfo)
         } catch (error: unknown) {

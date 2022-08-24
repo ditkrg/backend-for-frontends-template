@@ -87,8 +87,8 @@ export default class TokensManager {
         With the current flow of code, such a behavior will occur due to rapid requests that come after one another and the token manager will try to reconsume the same refresh token twice, to which the server replies with "invalid grant"; 
         For that reason, if such a thing happens, the token manager will need to just get the tokenset from the DB and return it.
       */
+      console.log("Error thrown while refreshing the token: ", { error  })
       if (error.name == "OPError") {
-
         this.refreshedTokenExpired = true
         return ({
           status: "refreshed",
