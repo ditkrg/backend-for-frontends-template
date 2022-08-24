@@ -6,8 +6,8 @@ on:
     tags:
       - "*"
 
-    branches:
-      - "*"
+    branches-ignore:
+      - "dependabot/**"
 
     paths-ignore:
       - "**.md"
