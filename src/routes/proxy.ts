@@ -71,7 +71,8 @@ export default (opts: { server: any, config: Configurable, client: Client }) => 
           reply.send(userInfo)
         } catch (error: unknown) {
           reply.status(500).send({
-            error: 'Unknown error occurred'
+            error: 'Unknown error occurred',
+            details: error
           })
         }
       }
