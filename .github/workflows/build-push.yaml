@@ -1,7 +1,11 @@
-name: Build and Push Images
+---
+name: Build and Push Image
 
 on:
   push:
+    tags:
+      - "*"
+
     branches:
       - "*"
 
@@ -14,12 +18,9 @@ concurrency: build-${{ github.ref }}
 
 jobs:
   build:
-    uses: ditkrg/common-github-workflows/.github/workflows/build-push-image.yaml@main
+    uses: ditkrg/build-image-workflow/.github/workflows/workflow.yaml@v1
     with:
-      tags: |-
-        reg.dev.krd/common/backend-for-frontends:${{ github.ref_name }}
-        reg.dev.krd/common/backend-for-frontends:${{ github.ref_name }}-${{ github.sha }}
-      cache-from: type=registry,ref=reg.dev.krd/common/backend-for-frontends:${{ github.ref_name }}
+      image: common/backend-for-frontends
     secrets:
       username: ${{ secrets.HARBOR_USER }}
       password: ${{ secrets.HARBOR_TOKEN }}
