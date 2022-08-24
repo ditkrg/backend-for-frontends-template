@@ -51,7 +51,7 @@ export default class TokensManager {
 
     const tokenSet = await this.redisClient.get(this.tokenKey);
 
-    if (tokenSet == null) {
+    if (!tokenSet) {
       throw ({
         isError: true,
         status: "invalid",
@@ -74,7 +74,7 @@ export default class TokensManager {
     try {
       const refreshedToken = await this.openIDClient.refresh(tokenSet);
 
-      await this.redisClient.set(this.tokenKey, JSON.stringify(refreshedToken), { EX: 60 * 60 * 24 * (this.config.cookie.expiryinDays || 30) });
+      await this.redisClient.set(this.tokenKey, JSON.stringify(refreshedToken), { EX: 60 * 60 * 24 * (this.config.cookie.expiryInDays || 30) });
 
       return ({
         status: "refreshed",
@@ -82,23 +82,37 @@ export default class TokensManager {
         tokenSet: refreshedToken
       })
     } catch (error: any) {
-      /* 
-        OPError will be thrown if the server replies with "invalid_grant". 
-        With the current flow of code, such a behavior will occur due to rapid requests that come after one another and the token manager will try to reconsume the same refresh token twice, to which the server replies with "invalid grant"; 
+      /*
+        OPError will be thrown if the server replies with "invalid_grant".
+        With the current flow of code, such a behavior will occur due to rapid requests that come after one another and the token manager will try to reconsume the same refresh token twice, to which the server replies with "invalid grant";
         For that reason, if such a thing happens, the token manager will need to just get the tokenset from the DB and return it.
       */
-      if (error.name == "OPError") {
+      if (error.name == "OPError" && error.error == "invalid_grant") {
+
+        const stringTokenFromRedis = await this.redisClient.get(this.tokenKey)
+
+        if (!stringTokenFromRedis) {
+          console.log(`Token ${this.tokenKey} was not found in redis`);
+          throw error;
+        }
+
+        const tokenFromRedis = JSON.parse(stringTokenFromRedis);
+
+        console.log(`Token ${this.tokenKey} already refreshed, using access token from cache`);
 
         this.refreshedTokenExpired = true
+
         return ({
           status: "refreshed",
           isError: false,
-          tokenSet: await this.redisClient.get(this.tokenKey)
+          tokenSet: tokenFromRedis
         })
 
-      } else {
-        throw error;
       }
+
+      console.log("Error thrown while refreshing the token: ", { error })
+
+      throw error;
     }
   }
 

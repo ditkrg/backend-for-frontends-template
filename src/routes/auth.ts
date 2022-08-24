@@ -49,7 +49,7 @@ export default (opts: { server: any, config: Configurable, openIDResponse: Issue
 
         await tokenManager.validateToken(unsignedCookie.value)
         if (tokenManager.refreshedTokenExpired) {
-          redisClient.del(unsignedCookie.value)
+          await redisClient.del(unsignedCookie.value)
           throw Error('401')
         }
         reply.redirect('/')
@@ -132,12 +132,12 @@ export default (opts: { server: any, config: Configurable, openIDResponse: Issue
             const identifier = uuid()
 
             await redisClient.set(identifier, JSON.stringify(tokenSet), {
-              EX: 60 * 60 * 24 * (config.cookie.expiryinDays || 30)
+              EX: 60 * 60 * 24 * (config.cookie.expiryInDays || 30)
             })
             await redisClient.del(state)
 
             const today = new Date()
-            const daysFromNow = new Date(today).setDate(today.getDate() + (config.cookie?.expiryinDays || 30))
+            const daysFromNow = new Date(today).setDate(today.getDate() + (config.cookie?.expiryInDays || 30))
 
             reply
               .setCookie(config.cookie.tokenCookieName, identifier, {
