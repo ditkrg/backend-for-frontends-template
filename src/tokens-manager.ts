@@ -74,7 +74,7 @@ export default class TokensManager {
     try {
       const refreshedToken = await this.openIDClient.refresh(tokenSet);
 
-      await this.redisClient.set(this.tokenKey, JSON.stringify(refreshedToken), { EX: 60 * 60 * 24 * (this.config.cookie.expiryinDays || 30) });
+      await this.redisClient.set(this.tokenKey, JSON.stringify(refreshedToken), { EX: 60 * 60 * 24 * (this.config.cookie.expiryInDays || 30) });
 
       return ({
         status: "refreshed",
@@ -82,9 +82,9 @@ export default class TokensManager {
         tokenSet: refreshedToken
       })
     } catch (error: any) {
-      /* 
-        OPError will be thrown if the server replies with "invalid_grant". 
-        With the current flow of code, such a behavior will occur due to rapid requests that come after one another and the token manager will try to reconsume the same refresh token twice, to which the server replies with "invalid grant"; 
+      /*
+        OPError will be thrown if the server replies with "invalid_grant".
+        With the current flow of code, such a behavior will occur due to rapid requests that come after one another and the token manager will try to reconsume the same refresh token twice, to which the server replies with "invalid grant";
         For that reason, if such a thing happens, the token manager will need to just get the tokenset from the DB and return it.
       */
       console.log("Error thrown while refreshing the token: ", { error  })
