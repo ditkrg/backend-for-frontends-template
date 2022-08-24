@@ -87,18 +87,32 @@ export default class TokensManager {
         With the current flow of code, such a behavior will occur due to rapid requests that come after one another and the token manager will try to reconsume the same refresh token twice, to which the server replies with "invalid grant";
         For that reason, if such a thing happens, the token manager will need to just get the tokenset from the DB and return it.
       */
-      console.log("Error thrown while refreshing the token: ", { error  })
-      if (error.name == "OPError") {
+      if (error.name == "OPError" && error.error == "invalid_grant") {
+
+        const stringTokenFromRedis = await this.redisClient.get(this.tokenKey)
+
+        if (!stringTokenFromRedis) {
+          console.log(`Token ${this.tokenKey} was not found in redis`);
+          throw error;
+        }
+
+        const tokenFromRedis = JSON.parse(stringTokenFromRedis);
+
+        console.log(`Token ${this.tokenKey} already refreshed, using access token from cache`);
+
         this.refreshedTokenExpired = true
+
         return ({
           status: "refreshed",
           isError: false,
-          tokenSet: await this.redisClient.get(this.tokenKey)
+          tokenSet: tokenFromRedis
         })
 
-      } else {
-        throw error;
       }
+
+      console.log("Error thrown while refreshing the token: ", { error })
+
+      throw error;
     }
   }
 
