@@ -50,7 +50,7 @@ redisClient.on('error', function (error: any) {
       client_secret: config.auth.clientSecret
     })
 
-    client[custom.clock_tolerance] = 30; // to allow a 30 second skew
+    // client[custom.clock_tolerance] = 30; // to allow a 30 second skew
 
     const server = fastify({
       trustProxy: config.fastify.trustProxy,
