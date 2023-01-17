@@ -16,7 +16,8 @@
         "clientSecret": "AUTH__CLIENT_SECRET",
         "redirectUrl": "AUTH__REDIRECT_URL",
         "discoveryDocumentUrl": "AUTH__DISCOVERY_DOCUMENT_URL",
-        "scopes": "AUTH__SCOPES"
+        "scopes": "AUTH__SCOPES",
+        "logoutFromIdentityServer": "AUTH__LOGOUT_FROM_IDENTITY_SERVER"
     },
     "sentry": {
         "dsn": "SENTRY__DSN",

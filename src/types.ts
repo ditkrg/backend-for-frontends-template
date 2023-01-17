@@ -21,6 +21,7 @@ interface AuthConfig {
     clientId: string
     clientSecret: string
     redirectUrl: string
+    logoutFromIdentityServer?:boolean
     discoveryDocumentUrl: string
     scopes?: string[] | string
 }
