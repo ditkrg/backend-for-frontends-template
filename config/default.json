@@ -18,7 +18,8 @@
         "clientSecret": "<OAUTH2 CLIENT SECRET>",
         "redirectUrl": "/auth/callback",
         "discoveryDocumentUrl": "<OPEN ID PROVIDER .well-known CONFIGS>",
-        "scopes": []
+        "scopes": [],
+        "logoutFromIdentityServer": true
     },
     "fastify": {
         "trustProxy": true,
